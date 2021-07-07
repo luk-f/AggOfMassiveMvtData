@@ -168,7 +168,7 @@ def put_in_proper_group(p, G):
     logging.debug(f"\t in {i}, {j} cell")
     G.matrice_of_cells[i, j][tuple(g.centroid)] = g
 
-def get_closer_centroid(p, G) -> CoordCentroid:
+def get_closer_centroid(p, G, cell_gap: int = 1) -> CoordCentroid:
     """
     pour un objet `p`, cherche le centroid le plus proche dans `G`
     """
@@ -178,14 +178,14 @@ def get_closer_centroid(p, G) -> CoordCentroid:
     C = []
     # on compare les distances à tous les centroids dans la cellule contenant `p`
     # et dans toutes les cellules voisines également
-    for k_row in range(max(i-1, 0), min(i+2, G.n_rows)):
-        for k_col in range(max(j-1, 0), min(j+2, G.n_columns)):
+    for k_row in range(max(i-cell_gap, 0), min(i+1+cell_gap, G.n_rows)):
+        for k_col in range(max(j-cell_gap, 0), min(j+1+cell_gap, G.n_columns)):
             # logging.info(f"\t\t\t\t {k_row}, {k_col}")
             for g in G.matrice_of_cells[k_row, k_col].values():
                 # logging.info(f"\t\t\t\t\t {g}")
                 dist_p_and_centroid = euclidean(p, g.centroid)
                 # logging.info(f"\t\t\t\t\t {dist_p_and_centroid}")
-                if dist_p_and_centroid <= G.max_radius:
+                if dist_p_and_centroid <= G.max_radius*cell_gap:
                     C.append((dist_p_and_centroid, g))
     if not C:
         return None
@@ -212,12 +212,20 @@ def redistribute_points(G: Grid):
             cell.cleanAllGroupOfPoint()
     # pour les réindexer ensuite vers le plus proche centroid
     for point in P:
-        logging.debug(f"\tfor {point}")
-        c = get_closer_centroid(point, G)
-        logging.debug(f"\tin {c}")
-        g = G.findGroup(tuple(c))
-        # on ajoute le point au groupe mais on ne met plus à jour le centroid
-        g.group_of_point.append(point)
+        # logging.debug(f"\tfor {point}")
+        try:
+            c = get_closer_centroid(point, G)
+            cell_gap = 2
+            while not c:
+                # nb : this loop not in original paper
+                c = get_closer_centroid(point, G, cell_gap=cell_gap)
+                cell_gap += 1
+            # logging.debug(f"\tin {c}")
+            g = G.findGroup(tuple(c))
+            # on ajoute le point au groupe mais on ne met plus à jour le centroid
+            g.group_of_point.append(point)
+        except:
+            print(f"Error {point}")
 
 if __name__ == "__main__":
 
