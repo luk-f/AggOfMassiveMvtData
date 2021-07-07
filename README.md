@@ -1,3 +1,3 @@
-# Spaial Generalization and Aggregation of Massive Movement Data
+# Spatial Generalization and Aggregation of Massive Movement Data
 by Andrienko & Andrienko, 2011
  
