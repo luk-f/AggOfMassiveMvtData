@@ -22,20 +22,24 @@ class Group:
 
     def __init__(self, p, c: CoordCentroid):
         self.group_of_point = [p]
-        self.centroid = c
+        self.__centroid = c
         
     def test_centroid(self, c) -> bool:
-        if self.centroid == c:
+        if self.__centroid == c:
             return True
         else:
             return False
 
     @property
-    def set_centroid(self, new_c: CoordCentroid):
-        self.centroid = new_c
+    def centroid(self):
+        return self.__centroid
+
+    @centroid.setter
+    def centroid(self, new_c: CoordCentroid):
+        self.__centroid = new_c
 
     def update_centroid(self):
-        self.set_centroid(np.mean(self.group_of_point, axis=0))
+        self.__centroid = tuple(np.mean(self.group_of_point, axis=0))
 
 GrpDictType = Dict[CoordCentroid, Group]
 
@@ -150,7 +154,7 @@ def put_in_proper_group(p, G):
     """
     c = get_closer_centroid(p, G)
     if not c:
-        g = Group(p, p)
+        g = Group(p, tuple(p))
         # R[p] = g, pas besoin ici
     else:
         g = G.findGroup(c)
@@ -162,7 +166,7 @@ def put_in_proper_group(p, G):
     # on positionne le groupe dans la bonne cellule selon ses coordonnées `i,j`
     i, j = G.get_grid_position(g.centroid)
     logging.debug(f"\t in {i}, {j} cell")
-    G.matrice_of_cells[i, j][tuple(g.centroid.tolist())] = g
+    G.matrice_of_cells[i, j][tuple(g.centroid)] = g
 
 def get_closer_centroid(p, G) -> CoordCentroid:
     """
@@ -176,11 +180,11 @@ def get_closer_centroid(p, G) -> CoordCentroid:
     # et dans toutes les cellules voisines également
     for k_row in range(max(i-1, 0), min(i+2, G.n_rows)):
         for k_col in range(max(j-1, 0), min(j+2, G.n_columns)):
-            logging.debug(f"\t\t\t\t {k_row}, {k_col}")
+            # logging.info(f"\t\t\t\t {k_row}, {k_col}")
             for g in G.matrice_of_cells[k_row, k_col].values():
-                logging.debug(f"\t\t\t\t\t {g}")
+                # logging.info(f"\t\t\t\t\t {g}")
                 dist_p_and_centroid = euclidean(p, g.centroid)
-                logging.debug(f"\t\t\t\t\t {dist_p_and_centroid}")
+                # logging.info(f"\t\t\t\t\t {dist_p_and_centroid}")
                 if dist_p_and_centroid <= G.max_radius:
                     C.append((dist_p_and_centroid, g))
     if not C:
@@ -227,7 +231,7 @@ if __name__ == "__main__":
     max_radius = 20
 
     # lancement de l'algo
-    centroids = algo_2(points, max_radius)
+    groups = algo_2(points, max_radius)
 
-    print(len(centroids))
-    print(centroids)
+    print(len(groups))
+    print(groups)
