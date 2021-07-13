@@ -68,5 +68,5 @@ if __name__ == "__main__":
 
     points = df_centroids.to_numpy()
 
-    voronoi_map(points, maxRadius, lat_min, lat_max, lon_min, lon_max)
+    _ = voronoi_map(points, maxRadius, lat_min, lat_max, lon_min, lon_max)
 
