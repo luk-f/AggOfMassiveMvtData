@@ -42,6 +42,7 @@ class Group:
         self.__centroid = tuple(np.mean(self.group_of_point, axis=0))
 
 GrpDictType = Dict[CoordCentroid, Group]
+ListDictType = Dict[CoordCentroid, List]
 
 class Cell(GrpDictType):
     ...
@@ -55,6 +56,9 @@ class Cell(GrpDictType):
         for cell in self.values():
             cell.group_of_point = []
         
+class DictCoordCentroidToListOfPoint(ListDictType):
+    ...
+
 vCell = np.vectorize(Cell)
 
 class Grid:
@@ -123,12 +127,26 @@ class Grid:
         # return np.array(centroids_list), 
         return np.array(points_list)
 
+    def getAllCentroids(self) -> np.array:
+        centroids_list = []
+        for cdict in [c for c in self.matrice_of_cells.flatten() if c]:
+            for ctuple in cdict:
+                centroids_list.append(list(ctuple))
+        return np.array(centroids_list)
+
+    def getCentroidsAndPoints(self) -> DictCoordCentroidToListOfPoint:
+        centroids_points_dict = DictCoordCentroidToListOfPoint()
+        for cdict in [c for c in self.matrice_of_cells.flatten() if c]:
+            for ctuple, group in cdict.items():
+                centroids_points_dict[ctuple] = np.array(group.group_of_point)
+        return centroids_points_dict
+
 
 """
 Définition des fonctions
 """
 
-def algo_2(P, max_radius):
+def algo_2(P, max_radius, redistribute_point=True):
     """
     Algo de clustering
     """
@@ -145,8 +163,12 @@ def algo_2(P, max_radius):
         logging.debug(f"put p = {p}")
         put_in_proper_group(p, G)
     logging.debug("call redistribute points")
-    redistribute_points(G)
-    return [c for c in G.matrice_of_cells.flatten() if c]
+    if redistribute_point:
+        redistribute_points(G)
+        # TODO retourner la liste des groupes plutôt que la grille de cellule ?
+        return G
+    else:
+        return G
 
 def put_in_proper_group(p, G):
     """
