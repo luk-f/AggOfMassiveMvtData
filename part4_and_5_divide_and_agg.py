@@ -9,8 +9,11 @@ import datetime
 if __name__ == "__main__":
     
     # parameters
-    folder_name = "liege_01"
-    maxRadius = 0.1
+    maxRadius = 0.5
+    # region = "liege"
+    region = "wallonie"
+    number_dec = str(maxRadius-int(maxRadius))[2:]
+    folder_name = f"{region}_0{number_dec}"
     start_date = datetime.datetime(2021, 1, 4, 0 ,0, 0)
     end_date = datetime.datetime(2021, 1, 15, 0 ,0, 0)
 
@@ -40,5 +43,6 @@ if __name__ == "__main__":
 
         count_link_between_clusters[boardingclusterid, alightingclusterid] += 1
 
-    pd.DataFrame(count_link_between_clusters).to_csv("test.csv")
+    pd.DataFrame(count_link_between_clusters).to_csv(os.path.join(path_data, "agg_mvt_"+\
+        f'{start_date.strftime("%Y_%m_%d_%H_%M_%S")}__{end_date.strftime("%Y_%m_%d_%H_%M_%S")}.csv'))
     

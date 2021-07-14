@@ -1,14 +1,26 @@
 import pandas as pd
 import numpy as np
-from scipy.spatial import Voronoi
+from scipy.spatial import Voronoi, voronoi_plot_2d
 from scipy.spatial.qhull import Voronoi as VoronoiObject
 from scipy.spatial.distance import cdist
+import matplotlib.pyplot as plt
+import random
 
 import os
 import settings
 import logging
 
 import datetime
+
+def random_color(as_str=True, alpha=0.5):
+    rgb = [random.randint(0,255),
+           random.randint(0,255),
+           random.randint(0,255)]
+    if as_str:
+        return "rgba"+str(tuple(rgb+[alpha]))
+    else:
+        # Normalize & listify
+        return list(np.array(rgb)/255) + [alpha]
 
 def voronoi_map(centroids: np.array, maxRadius: float,
                 lat_min: float, lat_max: float,
@@ -47,8 +59,11 @@ def voronoi_map(centroids: np.array, maxRadius: float,
 if __name__ == "__main__":
 
     # parameters
-    folder_name = "liege_01"
-    maxRadius = 0.1
+    maxRadius = 0.2
+    region = "liege"
+    # region = "wallonie"
+    number_dec = str(maxRadius-int(maxRadius))[2:]
+    folder_name = f"{region}_0{number_dec}"
     start_date = datetime.datetime(2021, 1, 4, 0 ,0, 0)
     end_date = datetime.datetime(2021, 1, 15, 0 ,0, 0)
 
@@ -68,5 +83,22 @@ if __name__ == "__main__":
 
     points = df_centroids.to_numpy()
 
-    _ = voronoi_map(points, maxRadius, lat_min, lat_max, lon_min, lon_max)
+    voronoi = voronoi_map(points, maxRadius, lat_min, lat_max, lon_min, lon_max)
+
+    fig = plt.figure(figsize=(10, 10))
+    ax = fig.add_subplot(111)
+
+    for centroid_number in df_stops['CENTROID_NUMBER'].unique():
+        # print(group_points)
+        df_tmp = df_stops[df_stops['CENTROID_NUMBER'] == centroid_number]
+        ax.scatter(df_tmp['LATITUDE'], df_tmp['LONGITUDE'], 
+        # cmap=plt.cm.nipy_spectral,
+        color=random_color(as_str=False, alpha=1), marker='.',
+        alpha=0.5, s=0.1)
+
+    fig = voronoi_plot_2d(voronoi, ax=ax, line_alpha=0.5)
+
+    plt.title(folder_name)
+
+    plt.show()
 

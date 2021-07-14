@@ -1,7 +1,14 @@
 import numpy as np
+import pandas as pd
 import math
 from typing import List, Dict, Tuple
 from scipy.spatial.distance import euclidean
+from scipy.spatial.distance import cdist
+
+import datetime
+
+import os
+import settings
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -251,17 +258,30 @@ def redistribute_points(G: Grid):
 
 if __name__ == "__main__":
 
-    points = np.array([[356.0, 201.0], [251.0, 217.0], [317.0, 83.0], 
-                   [403.0, 213.0], [432.0, 237.0], [411.0, 282.0], 
-                   [398.0, 331.0], [343.0, 248.0], [371.0, 219.0], 
-                   [394.0, 238.0], [324.0, 177.0], [462.0, 137.0], [23.0, 267.0] ])
+    # parameters
+    folder_name = "liege_01"
+    maxRadius = 0.1
+    start_date = datetime.datetime(2021, 1, 4, 0 ,0, 0)
+    end_date = datetime.datetime(2021, 1, 15, 0 ,0, 0)
 
-    # paramètres
-    # max radius en mètre
-    max_radius = 20
+    # load data
+    date_csv_str = f'{start_date.strftime("%Y_%m_%d_%H_%M_%S")}__{end_date.strftime("%Y_%m_%d_%H_%M_%S")}.csv'
+
+    path_data = os.path.join(settings.LOCAL_DATA_CLUSTER_ANDRIENKO, folder_name)
+
+    df_stops = pd.read_csv(os.path.join(path_data, date_csv_str), index_col=0)
 
     # lancement de l'algo
-    groups = algo_2(points, max_radius)
+    grille = algo_2(df_stops[['LATITUDE', 'LONGITUDE']].to_numpy(), 0.1, redistribute_point=False)
 
-    print(len(groups))
-    print(groups)
+    centroids = grille.getAllCentroids()
+
+    distancesToCentroids = cdist(df_stops[['LATITUDE', 'LONGITUDE']], centroids)
+
+    df_place_with_results = df_stops.copy()
+
+    df_place_with_results['CENTROID_NUMBER'] = pd.Series(np.argmin(distancesToCentroids, axis=1), 
+        index=df_stops.index)
+
+    df_centroids = pd.DataFrame(centroids, columns=['LATITUDE', 'LONGITUDE'])
+

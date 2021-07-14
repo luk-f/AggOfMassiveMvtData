@@ -34,8 +34,11 @@ def gap_arrow(dlat: float, dlong: float, gap_radius: float):
 if __name__ == "__main__":
 
     # parameters
-    folder_name = "liege_01"
     maxRadius = 0.1
+    region = "liege"
+    # region = "wallonie"
+    number_dec = str(maxRadius-int(maxRadius))[2:]
+    folder_name = f"{region}_0{number_dec}"
     start_date = datetime.datetime(2021, 1, 4, 0 ,0, 0)
     end_date = datetime.datetime(2021, 1, 15, 0 ,0, 0)
     plot_stops = True
@@ -59,7 +62,8 @@ if __name__ == "__main__":
     voronoi = voronoi_map(points, maxRadius, lat_min, lat_max, lon_min, lon_max)
 
     # load agg segments
-    segments_values = pd.read_csv("test.csv", index_col=0, dtype=np.uint64)
+    segments_values = pd.read_csv(os.path.join(path_data, "agg_mvt_"+\
+        f'{start_date.strftime("%Y_%m_%d_%H_%M_%S")}__{end_date.strftime("%Y_%m_%d_%H_%M_%S")}.csv'), index_col=0, dtype=np.uint64)
 
     fig = plt.figure(figsize=(10, 10))
     ax = fig.add_subplot(111)
@@ -76,7 +80,7 @@ if __name__ == "__main__":
     fig = voronoi_plot_2d(voronoi, ax=ax, line_alpha=0.5)
 
     max_width_arrow = 0.05
-    max_width_arrow = 0.01
+    # max_width_arrow = 0.01
     ratio_width_arrow = segments_values.to_numpy().max() / max_width_arrow
     radius_centroid = maxRadius*0.2
 
@@ -99,4 +103,5 @@ if __name__ == "__main__":
                               head_width=0.005,
                               head_length=0.01)
 
+    plt.title(folder_name)
     plt.show()
