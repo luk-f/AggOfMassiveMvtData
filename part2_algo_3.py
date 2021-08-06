@@ -7,7 +7,7 @@ import datetime
 import os
 import settings
 
-from part2_algo_2 import put_in_proper_group, redistribute_points, algo_2, Group
+from AggOfMassiveMvtData.part2_algo_2 import put_in_proper_group, redistribute_points, algo_2, Group
 
 import matplotlib.pyplot as plt
 import random
