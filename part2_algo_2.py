@@ -27,8 +27,11 @@ CoordCentroid = Tuple[float, float]
 
 class Group:
 
-    def __init__(self, p, c: CoordCentroid):
-        self.group_of_point = [p]
+    def __init__(self, p=None, c: CoordCentroid=None):
+        if p is None:
+            self.group_of_point = []
+        else:
+            self.group_of_point = [p]
         self.__centroid = c
         
     def test_centroid(self, c) -> bool:
@@ -77,8 +80,8 @@ class Grid:
         self.y_max = y_max
         logging.debug(f"grid min max : {self.x_min}, {self.x_max}, {self.y_min}, {self.y_max}")
         self.max_radius = max_radius
-        self.matrice_of_cells = np.empty((self.n_rows, self.n_columns), dtype=object)
-        self.matrice_of_cells[:] = vCell()
+        # self.matrice_of_cells = np.empty((self.n_rows, self.n_columns), dtype=object)
+        # self.matrice_of_cells[:] = vCell()
         # self.matrice_of_cells = np.full((self.n_rows, self.n_columns), vCell())
         self.matrice_of_cells = np.array([[vCell() for _ in range(self.n_columns)] 
                                             for _ in range(self.n_rows)
@@ -173,9 +176,7 @@ def algo_2(P, max_radius, redistribute_point=True):
     if redistribute_point:
         redistribute_points(G)
         # TODO retourner la liste des groupes plutôt que la grille de cellule ?
-        return G
-    else:
-        return G
+    return G
 
 def put_in_proper_group(p, G):
     """
