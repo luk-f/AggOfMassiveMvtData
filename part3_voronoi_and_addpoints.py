@@ -59,11 +59,14 @@ def voronoi_map(centroids: np.array, maxRadius: float,
 if __name__ == "__main__":
 
     # parameters
-    maxRadius = 0.2
-    region = "liege"
-    # region = "wallonie"
+    maxRadius = 0.1
+    # region = "liege"
+    region = "wallonie"
+    apply_algo_3 = True
     number_dec = str(maxRadius-int(maxRadius))[2:]
     folder_name = f"{region}_0{number_dec}"
+    if apply_algo_3:
+        folder_name += "_algo_3"
     start_date = datetime.datetime(2021, 1, 4, 0 ,0, 0)
     end_date = datetime.datetime(2021, 1, 15, 0 ,0, 0)
 
