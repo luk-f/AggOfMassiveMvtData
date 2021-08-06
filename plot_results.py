@@ -37,11 +37,14 @@ if __name__ == "__main__":
     maxRadius = 0.1
     region = "liege"
     # region = "wallonie"
+    apply_algo_3 = True
     number_dec = str(maxRadius-int(maxRadius))[2:]
     folder_name = f"{region}_0{number_dec}"
+    if apply_algo_3:
+        folder_name += "_algo_3"
     start_date = datetime.datetime(2021, 1, 4, 0 ,0, 0)
     end_date = datetime.datetime(2021, 1, 15, 0 ,0, 0)
-    plot_stops = True
+    plot_stops = False
 
     # load data
     date_csv_str = f'{start_date.strftime("%Y_%m_%d_%H_%M_%S")}__{end_date.strftime("%Y_%m_%d_%H_%M_%S")}.csv'
