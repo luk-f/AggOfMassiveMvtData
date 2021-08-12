@@ -73,7 +73,7 @@ if __name__ == "__main__":
     df_stops = pd.read_csv(os.path.join(path_data, date_csv_str), index_col=0)
 
     # lancement de l'algo
-    grille = algo_2(df_stops[['LATITUDE', 'LONGITUDE']].to_numpy(), maxRadius, redistribute_point=False)
+    grille = algo_2(df_stops[['LATITUDE', 'LONGITUDE']].to_numpy(), maxRadius, redistribute_point=True)
 
     grille = algo_3(grille, redistribute_point=False)
 
