@@ -37,7 +37,9 @@ if __name__ == "__main__":
     maxRadius = 0.1
     region = "liege"
     # region = "wallonie"
-    apply_algo_3 = True
+    apply_algo_3 = True # choose between "algo 2" and "algo 2 & 3"
+    without_interchange = True # choose if consider interchanges or not
+
     number_dec = str(maxRadius-int(maxRadius))[2:]
     folder_name = f"{region}_0{number_dec}"
     if apply_algo_3:
@@ -64,8 +66,12 @@ if __name__ == "__main__":
 
     voronoi = voronoi_map(points, maxRadius, lat_min, lat_max, lon_min, lon_max)
 
-    # load agg segments
-    segments_values = pd.read_csv(os.path.join(path_data, "agg_mvt_"+\
+    # load agg segments    
+    prefix = "agg_mvt_"
+    ## if True, ignore interchange
+    if without_interchange:
+        prefix += "without_interchange_"
+    segments_values = pd.read_csv(os.path.join(path_data, prefix+\
         f'{start_date.strftime("%Y_%m_%d_%H_%M_%S")}__{end_date.strftime("%Y_%m_%d_%H_%M_%S")}.csv'), index_col=0, dtype=np.uint64)
 
     fig = plt.figure(figsize=(10, 10))
