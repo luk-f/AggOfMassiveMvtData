@@ -2,18 +2,36 @@ import pandas as pd
 import numpy as np
 
 import os
+import sys
 import settings
 
 import datetime
 
+from utils import str_to_bool
+
 if __name__ == "__main__":
     
+    print(f"Numbers of arg: {len(sys.argv)}")
+          
     # parameters
-    maxRadius = 0.05
+    ## by default
+    maxRadius = 0.2
     region = "liege"
-    # region = "wallonie"
-    apply_algo_3 = True # choose between "algo 2" and "algo 2 & 3"
     without_interchange = True # choose if consider interchanges or not
+    apply_algo_3 = True # choose between "algo 2" and "algo 2 & 3"
+    
+    try:
+        if len(sys.argv) > 2:
+            maxRadius = float(sys.argv[1])
+            region = sys.argv[2]
+        if len(sys.argv) > 3:
+            without_interchange = str_to_bool(sys.argv[3])
+        if len(sys.argv) > 4:
+            apply_algo_3 = str_to_bool(sys.argv[4])
+    except:
+        print("Arg error")
+            
+    print(f"{maxRadius}, {region}, {without_interchange}, {apply_algo_3}")
 
     number_dec = str(maxRadius-int(maxRadius))[2:]
     folder_name = f"{region}_0{number_dec}"
@@ -45,6 +63,8 @@ if __name__ == "__main__":
         stops_to_num_cluster[index] = row.CENTROID_NUMBER
 
     prefix = "agg_mvt_"
+    if apply_algo_3:
+        prefix += "algo_3_"
     ## if True, remove interchange
     if without_interchange:
         df_pt_traveleg_light = df_pt_traveleg_light[df_pt_traveleg_light.BOARDINGSEQUENCE == 1.0]

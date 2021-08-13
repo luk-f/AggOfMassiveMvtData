@@ -4,23 +4,12 @@ from scipy.spatial import Voronoi, voronoi_plot_2d
 from scipy.spatial.qhull import Voronoi as VoronoiObject
 from scipy.spatial.distance import cdist
 import matplotlib.pyplot as plt
-import random
 
 import os
 import settings
-import logging
+from utils import random_color
 
 import datetime
-
-def random_color(as_str=True, alpha=0.5):
-    rgb = [random.randint(0,255),
-           random.randint(0,255),
-           random.randint(0,255)]
-    if as_str:
-        return "rgba"+str(tuple(rgb+[alpha]))
-    else:
-        # Normalize & listify
-        return list(np.array(rgb)/255) + [alpha]
 
 def voronoi_map(centroids: np.array, maxRadius: float,
                 lat_min: float, lat_max: float,

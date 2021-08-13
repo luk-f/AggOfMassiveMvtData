@@ -12,12 +12,6 @@ from AggOfMassiveMvtData.part2_algo_2 import put_in_proper_group, redistribute_p
 import matplotlib.pyplot as plt
 import random
 
-# def get_median_1d(points_1d) -> float:
-#     return median(points_1d)
-
-# def get_median(points):
-#     return np.array([])
-
 def algo_3(G, redistribute_point=True):
 
     medXY = {}
