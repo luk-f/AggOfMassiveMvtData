@@ -37,3 +37,23 @@ def gap_arrow(dlat: float, dlong: float, gap_radius: float):
     gap_dlat = cosinus * gap_radius
     gap_dlong = sinus * gap_radius
     return gap_dlat, gap_dlong
+
+def width_arrow_wrt_interval(min_arrow: float, max_arrow: float,
+                              value: float, 
+                              min_value: float, max_value: float) -> float:
+    """Return size of arrow wrt min/max arrow interval
+
+    :param min_arrow: [description]
+    :type min_arrow: float
+    :param max_arrow: [description]
+    :type max_arrow: float
+    :param value: [description]
+    :type value: float
+    :param min_value: [description]
+    :type min_value: float
+    :param max_value: [description]
+    :type max_value: float
+    :return: [description]
+    :rtype: float
+    """
+    return (max_arrow - min_arrow)/ max_value * (value - min_value) + min_arrow

@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from pandas.core.arrays.sparse import dtype
+from bisect import bisect_left
 
 from scipy.spatial import  voronoi_plot_2d
 import matplotlib.pyplot as plt
@@ -11,7 +12,7 @@ import settings
 import logging
 import sys
 
-from utils import str_to_bool, random_color, gap_arrow
+from utils import str_to_bool, random_color, gap_arrow, width_arrow_wrt_interval
 
 from part3_voronoi_and_addpoints import voronoi_map
 
@@ -86,7 +87,7 @@ if __name__ == "__main__":
     voronoi = voronoi_map(points, maxRadius, lat_min, lat_max, lon_min, lon_max)
 
     fig = plt.figure(figsize=(10, 10))
-    ax = fig.add_subplot(111)
+    ax = fig.add_subplot(121)
 
     if PLOT_STOPS:
         for centroid_number in df_stops['CENTROID_NUMBER'].unique():
@@ -99,10 +100,29 @@ if __name__ == "__main__":
 
     fig = voronoi_plot_2d(voronoi, ax=ax, line_alpha=0.5)
 
-    max_width_arrow = 0.05
-    # max_width_arrow = 0.01
+    max_width_arrow = 0.01
+    min_width_arrow = 0.001
     ratio_width_arrow = segments_values.to_numpy().max() / max_width_arrow
     radius_centroid = maxRadius*0.2
+    
+    # TODO
+    ## en utilisant les quantile
+    ## en utilisant une échelle log
+    number_interval = 5
+    segments_values_np = segments_values.to_numpy()
+    seg_quantiles = np.quantile(segments_values_np[segments_values_np > 0], 
+                                np.arange(0.0, 1.0, 1.0 / number_interval))
+    width_arrow_quartile = np.arange(min_width_arrow, max_width_arrow, 
+                                     (max_width_arrow - min_width_arrow) / number_interval)
+    seg_quantiles = np.append(seg_quantiles, segments_values.to_numpy().max())
+    print(seg_quantiles)
+    width_arrow_quartile = np.append(width_arrow_quartile, max_width_arrow)
+    print(width_arrow_quartile)
+    ratio_width_arrow_quantile = seg_quantiles/width_arrow_quartile
+    print(ratio_width_arrow_quantile)
+    
+    arrow_width_list = []
+    eff_list = []
 
     for start, row in enumerate(segments_values.to_numpy()):
         start_lat = df_centroids.loc[start].LATITUDE
@@ -112,17 +132,36 @@ if __name__ == "__main__":
             end_long = df_centroids.loc[end].LONGITUDE
             if val > 0:
                 if start != end:
+                    position_ratio_width_arrow = bisect_left(seg_quantiles, val)
+                    # tmp_width_arrow = val/(ratio_width_arrow_quantile[position_ratio_width_arrow]*
+                    #                        (number_interval-position_ratio_width_arrow))
+                    if position_ratio_width_arrow == 0:
+                        tmp_width_arrow = min_width_arrow
+                    else:
+                        tmp_width_arrow = width_arrow_wrt_interval(width_arrow_quartile[position_ratio_width_arrow-1],
+                                                                   width_arrow_quartile[position_ratio_width_arrow],
+                                                                   val, seg_quantiles[position_ratio_width_arrow-1],
+                                                                   seg_quantiles[position_ratio_width_arrow])
+                    
+                    eff_list.append(val)
+                    arrow_width_list.append(tmp_width_arrow)
+                    # print(f"{val} -> {position_ratio_width_arrow} -> {tmp_width_arrow}")
+                    
                     dlat = end_lat - start_lat
                     dlong = end_long - start_long
                     gap_lat, gap_long = gap_arrow(dlat, dlong, radius_centroid)
                     plt.arrow(start_lat+gap_lat, start_long+gap_long, 
                               dlat-2*gap_lat, dlong-2*gap_long,
                               length_includes_head=True, 
-                              width=(val/ratio_width_arrow),
+                              width=tmp_width_arrow,
                               shape='right',
                               head_width=0.005,
                               head_length=0.01)
+                else:
+                    ...
+                    # TODO scatter
 
+    # exit()
     # save directory and file name
     day_now = datetime.datetime.now().strftime("%Y_%m")
     res_path_name = os.path.join(os.path.join(settings.ONE_DRIVE_FOLDER, day_now), "results")
@@ -131,6 +170,10 @@ if __name__ == "__main__":
         logging.info(f"Directory {res_path_name} Created ")
     else:    
         logging.info(f"Directory {res_path_name} already exists")
+        
+    ax = fig.add_subplot(122)
+    # plt.hist(segments_values.to_numpy(), bins=50)
+    plt.scatter(eff_list, arrow_width_list)
     
     plt.title(region+'_'+prefix_input_seg+f'0.{number_dec}')
     fig = plt.gcf()
