@@ -18,7 +18,7 @@ from part3_voronoi_and_addpoints import voronoi_map
 
 """"""
 PLOT_SHOW = True
-PLOT_STOPS = False
+PLOT_STOPS = True
 """"""
 
 
@@ -96,30 +96,26 @@ if __name__ == "__main__":
             ax.scatter(df_tmp['LATITUDE'], df_tmp['LONGITUDE'], 
                        # cmap=plt.cm.nipy_spectral,
                        color=random_color(as_str=False, alpha=1), marker='.',
-                       alpha=0.5)
+                       alpha=0.01)
 
-    fig = voronoi_plot_2d(voronoi, ax=ax, line_alpha=0.5)
+    fig = voronoi_plot_2d(voronoi, ax=ax, line_alpha=0.1)
 
-    max_width_arrow = 0.01
-    min_width_arrow = 0.001
+    max_width_arrow = 0.05
+    min_width_arrow = 0.002
     ratio_width_arrow = segments_values.to_numpy().max() / max_width_arrow
     radius_centroid = maxRadius*0.2
     
     # TODO
-    ## en utilisant les quantile
+    ## en utilisant les quantiles
     ## en utilisant une échelle log
-    number_interval = 5
+    number_interval = 1
     segments_values_np = segments_values.to_numpy()
     seg_quantiles = np.quantile(segments_values_np[segments_values_np > 0], 
                                 np.arange(0.0, 1.0, 1.0 / number_interval))
     width_arrow_quartile = np.arange(min_width_arrow, max_width_arrow, 
                                      (max_width_arrow - min_width_arrow) / number_interval)
     seg_quantiles = np.append(seg_quantiles, segments_values.to_numpy().max())
-    print(seg_quantiles)
     width_arrow_quartile = np.append(width_arrow_quartile, max_width_arrow)
-    print(width_arrow_quartile)
-    ratio_width_arrow_quantile = seg_quantiles/width_arrow_quartile
-    print(ratio_width_arrow_quantile)
     
     arrow_width_list = []
     eff_list = []
@@ -133,8 +129,6 @@ if __name__ == "__main__":
             if val > 0:
                 if start != end:
                     position_ratio_width_arrow = bisect_left(seg_quantiles, val)
-                    # tmp_width_arrow = val/(ratio_width_arrow_quantile[position_ratio_width_arrow]*
-                    #                        (number_interval-position_ratio_width_arrow))
                     if position_ratio_width_arrow == 0:
                         tmp_width_arrow = min_width_arrow
                     else:
@@ -145,18 +139,32 @@ if __name__ == "__main__":
                     
                     eff_list.append(val)
                     arrow_width_list.append(tmp_width_arrow)
-                    # print(f"{val} -> {position_ratio_width_arrow} -> {tmp_width_arrow}")
+                    
+                    head_width = 0.005
+                    if tmp_width_arrow > 0.005*0.75:
+                        head_width = tmp_width_arrow * 1.3
                     
                     dlat = end_lat - start_lat
                     dlong = end_long - start_long
+                    # TODO adapt gap_arrow to sep pair of arrow
                     gap_lat, gap_long = gap_arrow(dlat, dlong, radius_centroid)
+                    # if dlat > 0:
+                    #     ...
+                    # elif dlat < 0:
+                    #     ...
+                    # else:
+                    #     if dlong > 0:
+                    #         ...
+                    #     else:
+                    #         ...
                     plt.arrow(start_lat+gap_lat, start_long+gap_long, 
                               dlat-2*gap_lat, dlong-2*gap_long,
                               length_includes_head=True, 
                               width=tmp_width_arrow,
                               shape='right',
-                              head_width=0.005,
-                              head_length=0.01)
+                              alpha=0.5, linewidth=0.001,
+                              head_width=head_width,
+                              head_length=0.005)
                 else:
                     ...
                     # TODO scatter
