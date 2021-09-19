@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from scipy.spatial.distance import cdist
+from geopy.distance import distance as geo_distance
 
 import datetime
 
@@ -21,7 +22,8 @@ def algo_3(G, redistribute_point=True):
     for c, g in centroid_and_points.items():
         medXY_k = np.median(g, axis=0)
         medXY[c] = medXY_k
-        mDist_k = np.mean(np.mean(cdist([medXY_k], g)[0]))
+        mDist_k = np.mean(np.mean(cdist([medXY_k], g, 
+                                  lambda u, v: geo_distance(u, v).km)[0]))
         dens_k = medXY_k.shape[0] / mDist_k**2
         dens[c] = dens_k
 
@@ -32,7 +34,8 @@ def algo_3(G, redistribute_point=True):
         if dens[centroid_key] < mDens:
             break
         points = centroid_and_points[centroid_key]
-        pMed = points[np.argmin(cdist([medXY[centroid_key]], points)[0])]
+        pMed = points[np.argmin(cdist([medXY[centroid_key]], points, 
+                                      lambda u, v: geo_distance(u, v).km)[0])]
         g_prime = Group(c=pMed)
         # R_prime.append(g_prime)
         i, j = G.get_grid_position(pMed)
@@ -53,7 +56,7 @@ def algo_3(G, redistribute_point=True):
 
 if __name__ == "__main__":
 
-     # parameters
+    # parameters
     folder_name = "liege_01"
     maxRadius = 0.1
     start_date = datetime.datetime(2021, 1, 4, 0 ,0, 0)
@@ -73,7 +76,8 @@ if __name__ == "__main__":
 
     centroids = grille.getAllCentroids()
 
-    distancesToCentroids = cdist(df_stops[['LATITUDE', 'LONGITUDE']], centroids)
+    distancesToCentroids = cdist(df_stops[['LATITUDE', 'LONGITUDE']], centroids, 
+                                 lambda u, v: geo_distance(u, v).km)
 
     df_place_with_results = df_stops.copy()
 

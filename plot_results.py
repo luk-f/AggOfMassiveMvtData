@@ -6,19 +6,21 @@ from bisect import bisect_left
 from scipy.spatial import  voronoi_plot_2d
 import matplotlib.pyplot as plt
 import datetime
+from geopy import distance
 
 import os
 import settings
 import logging
 import sys
 
-from utils import str_to_bool, random_color, gap_arrow, width_arrow_wrt_interval
+from utils import str_to_bool, random_color, gap_arrow, width_arrow_wrt_interval, skip_diag_masking
 
 from part3_voronoi_and_addpoints import voronoi_map
 
 """"""
 PLOT_SHOW = True
 PLOT_STOPS = True
+logging.basicConfig(level=logging.INFO)
 """"""
 
 
@@ -29,7 +31,8 @@ if __name__ == "__main__":
     # parameters
     ## by default
     maxRadius = 0.2
-    region = "liege"
+    # region = "liege"
+    region = "wallonie"
     without_interchange = True # choose if consider interchanges or not
     apply_algo_3 = True # choose between "algo 2" and "algo 2 & 3"
     
@@ -86,8 +89,17 @@ if __name__ == "__main__":
 
     voronoi = voronoi_map(points, maxRadius, lat_min, lat_max, lon_min, lon_max)
 
-    fig = plt.figure(figsize=(10, 10))
-    ax = fig.add_subplot(121)
+    coords_1 = (df_stops['LATITUDE'].max(), df_stops['LONGITUDE'].mean())
+    coords_2 = (df_stops['LATITUDE'].min(), df_stops['LONGITUDE'].mean())
+    distance_latitude = distance.distance(coords_1, coords_2).km
+    coords_1 = (df_stops['LATITUDE'].mean(), df_stops['LONGITUDE'].max())
+    coords_2 = (df_stops['LATITUDE'].mean(), df_stops['LONGITUDE'].min())
+    distance_longitude = distance.distance(coords_1, coords_2).km
+    print(f"Distance : {distance_latitude} ~~ {distance_longitude}")
+    ratio_lat_to_plot = 15 / distance_latitude
+    dim_plot_long = distance_longitude * ratio_lat_to_plot
+    fig = plt.figure(figsize=(15, dim_plot_long))
+    ax = fig.add_subplot(111)
 
     if PLOT_STOPS:
         for centroid_number in df_stops['CENTROID_NUMBER'].unique():
@@ -98,11 +110,18 @@ if __name__ == "__main__":
                        color=random_color(as_str=False, alpha=1), marker='.',
                        alpha=0.01)
 
-    fig = voronoi_plot_2d(voronoi, ax=ax, line_alpha=0.1)
+    fig = voronoi_plot_2d(voronoi, ax=ax, line_alpha=0.1, 
+                          show_vertices=False, show_points=False)
+    
+    ndarry_segments_values = segments_values.to_numpy()
+    ndarry_segments_values_with_diag = np.diag(ndarry_segments_values)
+    ndarry_segments_values_without_diag = skip_diag_masking(ndarry_segments_values)
 
+    max_size_scatter = 100
     max_width_arrow = 0.05
     min_width_arrow = 0.002
-    ratio_width_arrow = segments_values.to_numpy().max() / max_width_arrow
+    ratio_size_scatter = ndarry_segments_values_with_diag.max() / max_size_scatter
+    ratio_width_arrow = ndarry_segments_values_without_diag.max() / max_width_arrow
     radius_centroid = maxRadius*0.2
     
     # TODO
@@ -140,35 +159,52 @@ if __name__ == "__main__":
                     eff_list.append(val)
                     arrow_width_list.append(tmp_width_arrow)
                     
-                    head_width = 0.005
+                    head_width = 0.01
                     if tmp_width_arrow > 0.005*0.75:
                         head_width = tmp_width_arrow * 1.3
                     
                     dlat = end_lat - start_lat
                     dlong = end_long - start_long
-                    # TODO adapt gap_arrow to sep pair of arrow
-                    gap_lat, gap_long = gap_arrow(dlat, dlong, radius_centroid)
-                    # if dlat > 0:
-                    #     ...
-                    # elif dlat < 0:
-                    #     ...
-                    # else:
-                    #     if dlong > 0:
-                    #         ...
-                    #     else:
-                    #         ...
-                    plt.arrow(start_lat+gap_lat, start_long+gap_long, 
+                    
+                    gap_lat, gap_long, pairwise_latlong = gap_arrow(dlat, dlong, radius_centroid, 0.005)
+                    
+                    plt.arrow(start_lat + gap_lat + pairwise_latlong[0], 
+                              start_long + gap_long + pairwise_latlong[1], 
                               dlat-2*gap_lat, dlong-2*gap_long,
                               length_includes_head=True, 
                               width=tmp_width_arrow,
                               shape='right',
                               alpha=0.5, linewidth=0.001,
                               head_width=head_width,
-                              head_length=0.005)
+                              head_length=0.01)
                 else:
-                    ...
                     # TODO scatter
+                    plt.scatter(start_lat, start_long, 
+                                c='red', alpha=0.5,
+                                s=val/ratio_size_scatter)
 
+    plt.xlim((df_stops['LATITUDE'].min(), df_stops['LATITUDE'].max()))
+    plt.ylim((df_stops['LONGITUDE'].min(), df_stops['LONGITUDE'].max()))
+
+    # ax = fig.add_subplot(222)
+    # ax.title.set_text('Taille des flèches selon nombre de voyageurs')
+    # plt.scatter(eff_list, arrow_width_list)
+    # plt.grid()
+    # ax = fig.add_subplot(247)
+    # ax.title.set_text('Distrib nb de voyageurs entre régions')
+    # ndarry_segments_values = segments_values.to_numpy()
+    # plt.hist(ndarry_segments_values_without_diag, bins=ndarry_segments_values.shape[0])
+    # plt.grid()
+    # ax = fig.add_subplot(248)
+    # ax.title.set_text('Distrib inter-régions')
+    # plt.hist(ndarry_segments_values_with_diag, bins=ndarry_segments_values.shape[0])
+    # plt.grid()
+    
+    print(segments_values)
+    
+    fig.suptitle(region+'_'+prefix_input_seg+f'0.{number_dec}')
+    fig = plt.gcf()
+    
     # exit()
     # save directory and file name
     day_now = datetime.datetime.now().strftime("%Y_%m")
@@ -179,13 +215,6 @@ if __name__ == "__main__":
     else:    
         logging.info(f"Directory {res_path_name} already exists")
         
-    ax = fig.add_subplot(122)
-    # plt.hist(segments_values.to_numpy(), bins=50)
-    plt.scatter(eff_list, arrow_width_list)
-    
-    plt.title(region+'_'+prefix_input_seg+f'0.{number_dec}')
-    fig = plt.gcf()
-    
     path_savefig = os.path.join(res_path_name, region+'_'+prefix_input_seg+f'0{number_dec}.pdf')
     fig.savefig(path_savefig)
     logging.info(f'Fig {path_savefig} saved!')

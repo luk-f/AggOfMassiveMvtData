@@ -1,5 +1,6 @@
+from operator import ne
 import random
-from numpy import array, sqrt
+from numpy import array, sqrt, eye
 
 def str_to_bool(arg: str) -> bool:
     if arg.lower().strip() == "true":
@@ -17,7 +18,7 @@ def random_color(as_str=True, alpha=0.5):
         # Normalize & listify
         return list(array(rgb)/255) + [alpha]
 
-def gap_arrow(dlat: float, dlong: float, gap_radius: float):
+def gap_arrow(dlat: float, dlong: float, gap_radius: float, pairwise_gap: float = 0.0):
     """Compute gap latitude and longitude 
        to start and end arrow with a small step
        wrt. latitude and lontitude lenghts
@@ -28,6 +29,8 @@ def gap_arrow(dlat: float, dlong: float, gap_radius: float):
     :type dlong: float
     :param gap_radius: [description]
     :type gap_radius: float
+    :param pairwise_gap: [description], defaults to 0.0
+    :type pairwise_gap: float, optional
     :return: [description]
     :rtype: [type]
     """
@@ -36,7 +39,13 @@ def gap_arrow(dlat: float, dlong: float, gap_radius: float):
     sinus = dlong / dhypotenus
     gap_dlat = cosinus * gap_radius
     gap_dlong = sinus * gap_radius
-    return gap_dlat, gap_dlong
+    if pairwise_gap > 0.0:
+        pairwise_gap /= 2
+        ratio_gap = pairwise_gap/dhypotenus
+        pairwise_gap_dlong = gap_dlat * ratio_gap
+        pairwise_gap_dlat = - gap_dlong * ratio_gap
+        return gap_dlat, gap_dlong, (pairwise_gap_dlat, pairwise_gap_dlong)
+    return gap_dlat, gap_dlong, (0.0, 0.0)
 
 def width_arrow_wrt_interval(min_arrow: float, max_arrow: float,
                               value: float, 
@@ -57,3 +66,14 @@ def width_arrow_wrt_interval(min_arrow: float, max_arrow: float,
     :rtype: float
     """
     return (max_arrow - min_arrow)/ max_value * (value - min_value) + min_arrow
+
+def skip_diag_masking(A):
+    """
+    Remove numpy diagonal
+
+    :param A: matrice input
+    :type A: numpy.ndarray
+    :return: matrice output
+    :rtype: numpy.ndarray
+    """
+    return A[~eye(A.shape[0],dtype=bool)].reshape(A.shape[0],-1)

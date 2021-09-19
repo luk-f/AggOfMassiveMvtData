@@ -2,13 +2,15 @@ import numpy as np
 import pandas as pd
 import math
 from typing import List, Dict, Tuple
-from scipy.spatial.distance import euclidean
 from scipy.spatial.distance import cdist
+from geopy.distance import distance as geo_distance
 
 import datetime
 
 import os
 import settings
+
+import sys
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -79,6 +81,12 @@ class Grid:
         self.y_min = y_min
         self.y_max = y_max
         logging.debug(f"grid min max : {self.x_min}, {self.x_max}, {self.y_min}, {self.y_max}")
+        coords_east = (self.x_max, self.y_max - self.y_min)
+        coords_west = (self.x_min, self.y_max - self.y_min)
+        coords_north = (self.x_max - self.x_min, self.y_max)
+        coords_south = (self.x_max - self.x_min, self.y_min)
+        self.dist_latitude = geo_distance(coords_west, coords_east).km
+        self.dist_longitude = geo_distance(coords_north, coords_south).km
         self.max_radius = max_radius
         # self.matrice_of_cells = np.empty((self.n_rows, self.n_columns), dtype=object)
         # self.matrice_of_cells[:] = vCell()
@@ -90,11 +98,11 @@ class Grid:
         
     @property
     def n_rows(self) -> int:
-        return int((self.x_max - self.x_min) / self.max_radius + 1)
+        return int(self.dist_latitude / self.max_radius + 1)
         
     @property
     def n_columns(self) -> int:
-        return int((self.y_max - self.y_min) / self.max_radius + 1)
+        return int(self.dist_longitude / self.max_radius + 1)
     
     def findCell(self, c: CoordCentroid) -> Cell:
         """
@@ -121,8 +129,8 @@ class Grid:
         """
         Retrouve les coordonnées de l'objet `p` sur la matrice_of_cells
         """
-        i = math.floor((p[0] - self.x_min) / self.max_radius)
-        j = math.floor((p[1] - self.y_min) / self.max_radius)
+        i = math.floor(geo_distance(p, (self.x_min, p[1])).km / self.max_radius)
+        j = math.floor(geo_distance(p, (p[0], self.y_min)).km / self.max_radius)
         return i, j
 
     def getAllPoints(self) -> np.array:
@@ -213,7 +221,7 @@ def get_closer_centroid(p, G, cell_gap: int = 1) -> CoordCentroid:
             # logging.info(f"\t\t\t\t {k_row}, {k_col}")
             for g in G.matrice_of_cells[k_row, k_col].values():
                 # logging.info(f"\t\t\t\t\t {g}")
-                dist_p_and_centroid = euclidean(p, g.centroid)
+                dist_p_and_centroid = geo_distance(p, g.centroid)
                 # logging.info(f"\t\t\t\t\t {dist_p_and_centroid}")
                 if dist_p_and_centroid <= G.max_radius*cell_gap:
                     C.append((dist_p_and_centroid, g))
@@ -258,26 +266,47 @@ def redistribute_points(G: Grid):
             print(f"Error {point}")
 
 if __name__ == "__main__":
-
+    
+    print(f"Numbers of arg: {len(sys.argv)}")
+          
     # parameters
+    ## by default
     folder_name = "liege_01"
     maxRadius = 0.1
+    
+    try:
+        if len(sys.argv) > 2:
+            maxRadius = float(sys.argv[1])
+            region = sys.argv[2]
+            logging.info(f"{maxRadius}, {region}")
+
+            number_dec = str(maxRadius-int(maxRadius))[2:]
+            folder_name = f"{region}_0{number_dec}"
+    except:
+        logging.error("Arg error")
+            
+
     start_date = datetime.datetime(2021, 1, 4, 0 ,0, 0)
     end_date = datetime.datetime(2021, 1, 15, 0 ,0, 0)
-
+    
     # load data
     date_csv_str = f'{start_date.strftime("%Y_%m_%d_%H_%M_%S")}__{end_date.strftime("%Y_%m_%d_%H_%M_%S")}.csv'
 
     path_data = os.path.join(settings.LOCAL_DATA_CLUSTER_ANDRIENKO, folder_name)
 
     df_stops = pd.read_csv(os.path.join(path_data, date_csv_str), index_col=0)
+    logging.info(f"Nombre d'objet : {df_stops.shape[0]}")
 
     # lancement de l'algo
-    grille = algo_2(df_stops[['LATITUDE', 'LONGITUDE']].to_numpy(), 0.1, redistribute_point=False)
-
+    ## ATTENTION j'ai echantillonné ici
+    grille = algo_2(df_stops[['LATITUDE', 'LONGITUDE']].iloc[:5000].to_numpy(), 0.1, redistribute_point=False)
+    logging.info('Fin de l\'algo 2')
+    
     centroids = grille.getAllCentroids()
 
-    distancesToCentroids = cdist(df_stops[['LATITUDE', 'LONGITUDE']], centroids)
+    distancesToCentroids = cdist(df_stops[['LATITUDE', 'LONGITUDE']].iloc[:5000], centroids, 
+                                 lambda u, v: geo_distance(u, v).km)
+    logging.info('Fin du cdist entre STOPS et centroids')
 
     df_place_with_results = df_stops.copy()
 
@@ -285,4 +314,5 @@ if __name__ == "__main__":
         index=df_stops.index)
 
     df_centroids = pd.DataFrame(centroids, columns=['LATITUDE', 'LONGITUDE'])
+
 
