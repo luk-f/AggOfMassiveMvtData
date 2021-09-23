@@ -1,13 +1,15 @@
 import numpy as np
 import pandas as pd
-from scipy.spatial.distance import cdist
-from geopy.distance import distance as geo_distance
+import settings
 
 import datetime
 
 import sys
 import os
-import settings
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+
+from tools_lib import tools_lib
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -26,8 +28,10 @@ def algo_3(G, redistribute_point=True):
     for c, g in centroid_and_points.items():
         medXY_k = np.median(g, axis=0)
         medXY[c] = medXY_k
-        mDist_k = np.mean(np.mean(cdist([medXY_k], g, 
-                                  lambda u, v: geo_distance(u, v).km)[0]))
+        medXY_k_g_tuple = [(tuple(medXY_k), tuple(x_g)) for x_g in g]
+        dist_medXY_k_g = np.array(tools_lib.bulk_haversine(medXY_k_g_tuple))
+        mDist_k = np.mean(np.mean(dist_medXY_k_g))
+        
         dens_k = medXY_k.shape[0] / mDist_k**2
         dens[c] = dens_k
 
@@ -38,8 +42,11 @@ def algo_3(G, redistribute_point=True):
         if dens[centroid_key] < mDens:
             break
         points = centroid_and_points[centroid_key]
-        pMed = points[np.argmin(cdist([medXY[centroid_key]], points, 
-                                      lambda u, v: geo_distance(u, v).km)[0])]
+        medXY_centroid_key_points_tuple = [(tuple(medXY_k), tuple(point)) 
+                                           for point in points]
+        dist_medXY_centroid_key_points = \
+            np.array(tools_lib.bulk_haversine(medXY_centroid_key_points_tuple))
+        pMed = points[np.argmin(dist_medXY_centroid_key_points)]
         g_prime = Group(c=pMed)
         # R_prime.append(g_prime)
         i, j = G.get_grid_position(pMed)
@@ -95,9 +102,22 @@ if __name__ == "__main__":
     grille = algo_3(grille, redistribute_point=False)
 
     centroids = grille.getAllCentroids()
+    
+    logging.info(f"Nombre de centroids : {centroids.shape[0]}")
 
-    distancesToCentroids = cdist(df_stops[['LATITUDE', 'LONGITUDE']], centroids, 
-                                 lambda u, v: geo_distance(u, v).km)
+    # distancesToCentroids = cdist(df_stops[['LATITUDE', 'LONGITUDE']].iloc[:5000], centroids, 
+    #                              lambda u, v: geo_distance(u, v).km)
+    df_stops_tuple = [tuple(x) for x in df_stops[['LATITUDE', 'LONGITUDE']].to_numpy()]
+    centroids_tuple = [tuple(x) for x in centroids]
+    df_stops_centroid_tuple = []
+    for stop in df_stops_tuple:
+        for centroid in centroids_tuple:
+            df_stops_centroid_tuple.append((stop, centroid))
+    distancesToCentroids = tools_lib.bulk_haversine(df_stops_centroid_tuple)
+    logging.info('Fin du cdist entre STOPS et centroids')
+    
+    distancesToCentroids = np.array(distancesToCentroids).reshape((len(df_stops_tuple), 
+                                                                   len(centroids_tuple)))
 
     df_place_with_results = df_stops.copy()
 

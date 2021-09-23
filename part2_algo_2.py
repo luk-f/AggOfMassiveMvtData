@@ -2,8 +2,6 @@ import numpy as np
 import pandas as pd
 import math
 from typing import List, Dict, Tuple
-from scipy.spatial.distance import cdist
-from geopy.distance import distance as geo_distance
 
 import sys
 import os
@@ -310,7 +308,6 @@ if __name__ == "__main__":
     logging.info(f"Nombre d'objet : {df_stops.shape[0]}")
 
     # lancement de l'algo
-    ## ATTENTION j'ai echantillonné ici
     grille = algo_2(df_stops[['LATITUDE', 'LONGITUDE']].to_numpy(), 10, redistribute_point=False)
     logging.info('Fin de l\'algo 2')
     
@@ -318,8 +315,6 @@ if __name__ == "__main__":
     
     logging.info(f"Nombre de centroids : {centroids.shape[0]}")
 
-    # distancesToCentroids = cdist(df_stops[['LATITUDE', 'LONGITUDE']].iloc[:5000], centroids, 
-    #                              lambda u, v: geo_distance(u, v).km)
     df_stops_tuple = [tuple(x) for x in df_stops[['LATITUDE', 'LONGITUDE']].to_numpy()]
     centroids_tuple = [tuple(x) for x in centroids]
     df_stops_centroid_tuple = []
