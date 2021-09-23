@@ -7,7 +7,7 @@ import settings
 
 import datetime
 
-from utils import str_to_bool
+from utils import str_to_bool, generate_folder_name
 
 if __name__ == "__main__":
     
@@ -33,13 +33,7 @@ if __name__ == "__main__":
             
     print(f"{maxRadius}, {region}, {without_interchange}, {apply_algo_3}")
 
-    number_dec = str(maxRadius-int(maxRadius))[2:]
-    if number_dec:
-        folder_name = f"{region}_{int(maxRadius)}-{number_dec}"
-    else:
-        folder_name = f"{region}_{int(maxRadius)}"
-    if apply_algo_3:
-        folder_name += "_algo_3"
+    folder_name = generate_folder_name(region, maxRadius, apply_algo_3)
     start_date = datetime.datetime(2021, 1, 4, 0 ,0, 0)
     end_date = datetime.datetime(2021, 1, 15, 0 ,0, 0)
 
