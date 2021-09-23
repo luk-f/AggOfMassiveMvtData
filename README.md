@@ -1,3 +1,5 @@
+> :warning: **missing file**: can't be computed without reimplementation of geo distance
+
 # Spatial Generalization and Aggregation of Massive Movement Data
 by Andrienko & Andrienko, 2011
  
