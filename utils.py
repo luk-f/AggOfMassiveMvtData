@@ -1,6 +1,8 @@
 from operator import ne
 import random
 from numpy import array, sqrt, eye
+from haversine import inverse_haversine, Direction
+from scipy.spatial.distance import cdist
 
 def str_to_bool(arg: str) -> bool:
     if arg.lower().strip() == "true":
@@ -77,3 +79,22 @@ def skip_diag_masking(A):
     :rtype: numpy.ndarray
     """
     return A[~eye(A.shape[0],dtype=bool)].reshape(A.shape[0],-1)
+
+def max_radius_km_to_3_max_radius(maxRadius: float,
+                                  lat_min: float, lat_max: float,
+                                  lon_min: float, lon_max: float):
+    middle_point = ((lat_min + lat_max)/2, (lon_min + lon_max)/2)
+    middle_point_lat = inverse_haversine(middle_point, maxRadius, Direction.WEST)
+    middle_point_long = inverse_haversine(middle_point, maxRadius, Direction.NORTH)
+    middle_point_latlong = inverse_haversine(middle_point, maxRadius, Direction.NORTHWEST)
+    return cdist([middle_point], [middle_point_lat, middle_point_long, middle_point_latlong])[0]
+
+def generate_folder_name(region: str, maxRadius: str, apply_algo_3: bool = False) -> str:
+    if maxRadius-int(maxRadius) > 0:
+        number_dec = str(maxRadius-int(maxRadius))[2:]
+        folder_name = f"{region}_{int(maxRadius)}-{number_dec}"
+    else:
+        folder_name =  f"{region}_{int(maxRadius)}"
+    if apply_algo_3:
+        return folder_name + "_algo_3"
+    return folder_name

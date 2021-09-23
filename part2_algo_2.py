@@ -5,6 +5,13 @@ from typing import List, Dict, Tuple
 from scipy.spatial.distance import cdist
 from geopy.distance import distance as geo_distance
 
+import sys
+import os
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+
+from tools_lib import tools_lib
+
 import datetime
 
 import os
@@ -14,6 +21,8 @@ import sys
 
 import logging
 logging.basicConfig(level=logging.INFO)
+
+from AggOfMassiveMvtData.utils import generate_folder_name
 
 # Notations
 # G : un Grid
@@ -81,12 +90,13 @@ class Grid:
         self.y_min = y_min
         self.y_max = y_max
         logging.debug(f"grid min max : {self.x_min}, {self.x_max}, {self.y_min}, {self.y_max}")
-        coords_east = (self.x_max, self.y_max - self.y_min)
-        coords_west = (self.x_min, self.y_max - self.y_min)
-        coords_north = (self.x_max - self.x_min, self.y_max)
-        coords_south = (self.x_max - self.x_min, self.y_min)
-        self.dist_latitude = geo_distance(coords_west, coords_east).km
-        self.dist_longitude = geo_distance(coords_north, coords_south).km
+        coords_east = (self.x_max, (self.y_max + self.y_min)/2)
+        coords_west = (self.x_min, (self.y_max + self.y_min)/2)
+        coords_north = ((self.x_max + self.x_min)/2, self.y_max)
+        coords_south = ((self.x_max + self.x_min)/2, self.y_min)
+        logging.debug(f"grid coord extreme : {coords_east}, {coords_west}, {coords_north}, {coords_south}")
+        self.dist_latitude = tools_lib.haversine(coords_west, coords_east)/1000
+        self.dist_longitude = tools_lib.haversine(coords_north, coords_south)/1000
         self.max_radius = max_radius
         # self.matrice_of_cells = np.empty((self.n_rows, self.n_columns), dtype=object)
         # self.matrice_of_cells[:] = vCell()
@@ -95,6 +105,7 @@ class Grid:
                                             for _ in range(self.n_rows)
                                           ],
                                          dtype=object)
+        logging.debug(f"grid col row : {self.n_columns}, {self.n_rows}")
         
     @property
     def n_rows(self) -> int:
@@ -129,8 +140,9 @@ class Grid:
         """
         Retrouve les coordonnées de l'objet `p` sur la matrice_of_cells
         """
-        i = math.floor(geo_distance(p, (self.x_min, p[1])).km / self.max_radius)
-        j = math.floor(geo_distance(p, (p[0], self.y_min)).km / self.max_radius)
+        p_tuple = (p[0], p[1])
+        i = math.floor(tools_lib.haversine(p_tuple, (self.x_min, p[1])) / (1000*self.max_radius))
+        j = math.floor(tools_lib.haversine(p_tuple, (p[0], self.y_min)) / (1000*self.max_radius))
         return i, j
 
     def getAllPoints(self) -> np.array:
@@ -221,7 +233,8 @@ def get_closer_centroid(p, G, cell_gap: int = 1) -> CoordCentroid:
             # logging.info(f"\t\t\t\t {k_row}, {k_col}")
             for g in G.matrice_of_cells[k_row, k_col].values():
                 # logging.info(f"\t\t\t\t\t {g}")
-                dist_p_and_centroid = geo_distance(p, g.centroid)
+                p_tuple = (p[0], p[1])
+                dist_p_and_centroid = tools_lib.haversine(p_tuple, g.centroid)/1000
                 # logging.info(f"\t\t\t\t\t {dist_p_and_centroid}")
                 if dist_p_and_centroid <= G.max_radius*cell_gap:
                     C.append((dist_p_and_centroid, g))
@@ -271,19 +284,18 @@ if __name__ == "__main__":
           
     # parameters
     ## by default
-    folder_name = "liege_01"
-    maxRadius = 0.1
+    folder_name = "liege_10"
+    maxRadius = 10
     
     try:
         if len(sys.argv) > 2:
             maxRadius = float(sys.argv[1])
             region = sys.argv[2]
             logging.info(f"{maxRadius}, {region}")
-
-            number_dec = str(maxRadius-int(maxRadius))[2:]
-            folder_name = f"{region}_0{number_dec}"
-    except:
-        logging.error("Arg error")
+            folder_name = generate_folder_name(region, maxRadius)
+    except Exception as e:
+        logging.error(f"Arguments error: {e}")
+        exit()
             
 
     start_date = datetime.datetime(2021, 1, 4, 0 ,0, 0)
@@ -299,14 +311,26 @@ if __name__ == "__main__":
 
     # lancement de l'algo
     ## ATTENTION j'ai echantillonné ici
-    grille = algo_2(df_stops[['LATITUDE', 'LONGITUDE']].iloc[:5000].to_numpy(), 0.1, redistribute_point=False)
+    grille = algo_2(df_stops[['LATITUDE', 'LONGITUDE']].to_numpy(), 10, redistribute_point=False)
     logging.info('Fin de l\'algo 2')
     
     centroids = grille.getAllCentroids()
+    
+    logging.info(f"Nombre de centroids : {centroids.shape[0]}")
 
-    distancesToCentroids = cdist(df_stops[['LATITUDE', 'LONGITUDE']].iloc[:5000], centroids, 
-                                 lambda u, v: geo_distance(u, v).km)
+    # distancesToCentroids = cdist(df_stops[['LATITUDE', 'LONGITUDE']].iloc[:5000], centroids, 
+    #                              lambda u, v: geo_distance(u, v).km)
+    df_stops_tuple = [tuple(x) for x in df_stops[['LATITUDE', 'LONGITUDE']].to_numpy()]
+    centroids_tuple = [tuple(x) for x in centroids]
+    df_stops_centroid_tuple = []
+    for stop in df_stops_tuple:
+        for centroid in centroids_tuple:
+            df_stops_centroid_tuple.append((stop, centroid))
+    distancesToCentroids = tools_lib.bulk_haversine(df_stops_centroid_tuple)
     logging.info('Fin du cdist entre STOPS et centroids')
+    
+    distancesToCentroids = np.array(distancesToCentroids).reshape((len(df_stops_tuple), 
+                                                                   len(centroids_tuple)))
 
     df_place_with_results = df_stops.copy()
 

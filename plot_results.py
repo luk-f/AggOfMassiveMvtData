@@ -13,9 +13,17 @@ import settings
 import logging
 import sys
 
-from utils import str_to_bool, random_color, gap_arrow, width_arrow_wrt_interval, skip_diag_masking
+from utils import str_to_bool, random_color, gap_arrow, width_arrow_wrt_interval, \
+    skip_diag_masking, max_radius_km_to_3_max_radius, generate_folder_name
 
 from part3_voronoi_and_addpoints import voronoi_map
+
+import sys
+import os
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+
+from tools_lib import tools_lib
 
 """"""
 PLOT_SHOW = True
@@ -30,11 +38,11 @@ if __name__ == "__main__":
           
     # parameters
     ## by default
-    maxRadius = 0.2
-    # region = "liege"
-    region = "wallonie"
+    maxRadius = 10
+    region = "liege"
+    # region = "wallonie"
     without_interchange = True # choose if consider interchanges or not
-    apply_algo_3 = True # choose between "algo 2" and "algo 2 & 3"
+    apply_algo_3 = False # choose between "algo 2" and "algo 2 & 3"
     
     try:
         if len(sys.argv) > 2:
@@ -50,10 +58,7 @@ if __name__ == "__main__":
     print(f"{maxRadius}, {region}, {without_interchange}, {apply_algo_3}")
 
     # define input folder (for stops, centroids and segments)
-    number_dec = str(maxRadius-int(maxRadius))[2:]
-    input_folder_name = f"{region}_0{number_dec}"
-    if apply_algo_3:
-        input_folder_name += "_algo_3"
+    input_folder_name = generate_folder_name(region, maxRadius, apply_algo_3)
     start_date = datetime.datetime(2021, 1, 4, 0 ,0, 0)
     end_date = datetime.datetime(2021, 1, 15, 0 ,0, 0)
     path_data = os.path.join(settings.LOCAL_DATA_CLUSTER_ANDRIENKO, input_folder_name)
@@ -89,17 +94,19 @@ if __name__ == "__main__":
 
     voronoi = voronoi_map(points, maxRadius, lat_min, lat_max, lon_min, lon_max)
 
-    coords_1 = (df_stops['LATITUDE'].max(), df_stops['LONGITUDE'].mean())
-    coords_2 = (df_stops['LATITUDE'].min(), df_stops['LONGITUDE'].mean())
-    distance_latitude = distance.distance(coords_1, coords_2).km
-    coords_1 = (df_stops['LATITUDE'].mean(), df_stops['LONGITUDE'].max())
-    coords_2 = (df_stops['LATITUDE'].mean(), df_stops['LONGITUDE'].min())
-    distance_longitude = distance.distance(coords_1, coords_2).km
+    coords_1 = (lat_max, df_stops['LONGITUDE'].mean())
+    coords_2 = (lat_min, df_stops['LONGITUDE'].mean())
+    distance_latitude = tools_lib.haversine(coords_1, coords_2)/1000
+    coords_1 = (df_stops['LATITUDE'].mean(), lon_max)
+    coords_2 = (df_stops['LATITUDE'].mean(), lon_min)
+    distance_longitude = tools_lib.haversine(coords_1, coords_2)/1000
     print(f"Distance : {distance_latitude} ~~ {distance_longitude}")
     ratio_lat_to_plot = 15 / distance_latitude
     dim_plot_long = distance_longitude * ratio_lat_to_plot
-    fig = plt.figure(figsize=(15, dim_plot_long))
-    ax = fig.add_subplot(111)
+    
+    fig = plt.figure(figsize=(15*2, dim_plot_long))
+    
+    ax = fig.add_subplot(121)
 
     if PLOT_STOPS:
         for centroid_number in df_stops['CENTROID_NUMBER'].unique():
@@ -122,7 +129,7 @@ if __name__ == "__main__":
     min_width_arrow = 0.002
     ratio_size_scatter = ndarry_segments_values_with_diag.max() / max_size_scatter
     ratio_width_arrow = ndarry_segments_values_without_diag.max() / max_width_arrow
-    radius_centroid = maxRadius*0.2
+    _, _, radius_centroid = max_radius_km_to_3_max_radius(maxRadius, lat_min, lat_max, lon_min, lon_max)*0.2
     
     # TODO
     ## en utilisant les quantiles
@@ -168,7 +175,10 @@ if __name__ == "__main__":
                     
                     gap_lat, gap_long, pairwise_latlong = gap_arrow(dlat, dlong, radius_centroid, 0.005)
                     
-                    plt.arrow(start_lat + gap_lat + pairwise_latlong[0], 
+                    plt.arrow(
+                        # start_lat, start_long, 
+                        #       dlat, dlong,
+                              start_lat + gap_lat + pairwise_latlong[0], 
                               start_long + gap_long + pairwise_latlong[1], 
                               dlat-2*gap_lat, dlong-2*gap_long,
                               length_includes_head=True, 
@@ -177,6 +187,7 @@ if __name__ == "__main__":
                               alpha=0.5, linewidth=0.001,
                               head_width=head_width,
                               head_length=0.01)
+                    # break
                 else:
                     # TODO scatter
                     plt.scatter(start_lat, start_long, 
@@ -186,23 +197,23 @@ if __name__ == "__main__":
     plt.xlim((df_stops['LATITUDE'].min(), df_stops['LATITUDE'].max()))
     plt.ylim((df_stops['LONGITUDE'].min(), df_stops['LONGITUDE'].max()))
 
-    # ax = fig.add_subplot(222)
-    # ax.title.set_text('Taille des flèches selon nombre de voyageurs')
-    # plt.scatter(eff_list, arrow_width_list)
-    # plt.grid()
-    # ax = fig.add_subplot(247)
-    # ax.title.set_text('Distrib nb de voyageurs entre régions')
-    # ndarry_segments_values = segments_values.to_numpy()
-    # plt.hist(ndarry_segments_values_without_diag, bins=ndarry_segments_values.shape[0])
-    # plt.grid()
-    # ax = fig.add_subplot(248)
-    # ax.title.set_text('Distrib inter-régions')
-    # plt.hist(ndarry_segments_values_with_diag, bins=ndarry_segments_values.shape[0])
-    # plt.grid()
+    ax = fig.add_subplot(222)
+    ax.title.set_text('Taille des flèches selon nombre de voyageurs')
+    plt.scatter(eff_list, arrow_width_list)
+    plt.grid()
+    ax = fig.add_subplot(247)
+    ax.title.set_text('Distrib nb de voyageurs entre régions')
+    ndarry_segments_values = segments_values.to_numpy()
+    plt.hist(ndarry_segments_values_without_diag, bins=ndarry_segments_values.shape[0])
+    plt.grid()
+    ax = fig.add_subplot(248)
+    ax.title.set_text('Distrib inter-régions')
+    plt.hist(ndarry_segments_values_with_diag, bins=ndarry_segments_values.shape[0])
+    plt.grid()
     
-    print(segments_values)
+    # print(segments_values)
     
-    fig.suptitle(region+'_'+prefix_input_seg+f'0.{number_dec}')
+    fig.suptitle(region+'_'+prefix_input_seg+f'{maxRadius}')
     fig = plt.gcf()
     
     # exit()
@@ -215,7 +226,7 @@ if __name__ == "__main__":
     else:    
         logging.info(f"Directory {res_path_name} already exists")
         
-    path_savefig = os.path.join(res_path_name, region+'_'+prefix_input_seg+f'0{number_dec}.pdf')
+    path_savefig = os.path.join(res_path_name, region+'_'+prefix_input_seg+f'{maxRadius}.pdf')
     fig.savefig(path_savefig)
     logging.info(f'Fig {path_savefig} saved!')
     

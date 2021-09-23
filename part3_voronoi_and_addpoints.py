@@ -3,11 +3,19 @@ import numpy as np
 from scipy.spatial import Voronoi, voronoi_plot_2d
 from scipy.spatial.qhull import Voronoi as VoronoiObject
 from scipy.spatial.distance import cdist
+
+import sys
+import os
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+
+from tools_lib import tools_lib
+
 import matplotlib.pyplot as plt
 
 import os
 import settings
-from utils import random_color
+from utils import random_color, max_radius_km_to_3_max_radius
 
 import datetime
 
@@ -17,27 +25,37 @@ def voronoi_map(centroids: np.array, maxRadius: float,
     
     # add points
     point_supp = []
+    max_radius_lat, max_radius_long, _ = \
+        max_radius_km_to_3_max_radius(maxRadius, lat_min, lat_max, lon_min, lon_max)
 
-    maxRadius_2 = maxRadius*2
-    hauteur = np.sqrt(maxRadius_2**2 - (maxRadius_2/2)**2)
+    # maxRadius_2 = maxRadius*2
+    max_radius_lat_2 = max_radius_lat*2
+    max_radius_long_2 = max_radius_long*2
+    hauteur = np.sqrt(max_radius_lat_2**2 - (max_radius_long_2/2)**2)
 
     paire = True
-    for y in np.arange(lon_min - maxRadius_2, 
-                    lon_max + maxRadius_2, hauteur):
+    for y in np.arange(lon_min - max_radius_long_2, 
+                    lon_max + max_radius_long_2, hauteur):
         if paire:
-            x_init = lat_min - maxRadius_2
+            x_init = lat_min - max_radius_lat_2
         else:
-            x_init = lat_min - maxRadius_2 + maxRadius_2/2
+            x_init = lat_min - max_radius_lat_2 + max_radius_lat_2/2
         for x in np.arange(x_init, 
-                        lat_max + maxRadius_2, maxRadius_2):
-            point_supp.append([x, y])
+                        lat_max + max_radius_lat_2, max_radius_lat_2):
+            point_supp.append((x, y))
         paire = not paire
-    point_supp = np.array(point_supp)
+    # point_supp = np.array(point_supp)
 
     # select valid additional points
-    distance_supp = cdist(point_supp, centroids)
-    supp_selected = np.all(distance_supp > maxRadius_2, axis=1)
-    point_supp_selected = point_supp[supp_selected]
+    centroids_tuple = [tuple(x) for x in centroids]
+    df_tuple = []
+    for pt_sup in point_supp:
+        for centroid in centroids_tuple:
+            df_tuple.append((pt_sup, centroid))
+    distance_supp = np.array(tools_lib.bulk_haversine(df_tuple)).\
+        reshape((len(point_supp), len(centroids_tuple)))
+    supp_selected = np.all(distance_supp > maxRadius*2, axis=1)
+    point_supp_selected = np.array(point_supp)[supp_selected]
 
     new_points = np.concatenate((centroids, point_supp_selected))
 
@@ -48,12 +66,16 @@ def voronoi_map(centroids: np.array, maxRadius: float,
 if __name__ == "__main__":
 
     # parameters
-    maxRadius = 0.1
-    # region = "liege"
-    region = "wallonie"
+    maxRadius = 10
+    region = "liege"
+    # region = "wallonie"
     apply_algo_3 = True
     number_dec = str(maxRadius-int(maxRadius))[2:]
-    folder_name = f"{region}_0{number_dec}"
+    # TODO warning for folder_name
+    if number_dec:
+        folder_name = f"{region}_0{number_dec}"
+    else:
+        folder_name = f"{region}_{int(maxRadius)}"
     if apply_algo_3:
         folder_name += "_algo_3"
     start_date = datetime.datetime(2021, 1, 4, 0 ,0, 0)
@@ -76,6 +98,8 @@ if __name__ == "__main__":
     points = df_centroids.to_numpy()
 
     voronoi = voronoi_map(points, maxRadius, lat_min, lat_max, lon_min, lon_max)
+    
+    # exit()
 
     fig = plt.figure(figsize=(10, 10))
     ax = fig.add_subplot(111)
@@ -89,6 +113,9 @@ if __name__ == "__main__":
         alpha=0.5, s=0.1)
 
     fig = voronoi_plot_2d(voronoi, ax=ax, line_alpha=0.5)
+    
+    plt.xlim((df_stops['LATITUDE'].min(), df_stops['LATITUDE'].max()))
+    plt.ylim((df_stops['LONGITUDE'].min(), df_stops['LONGITUDE'].max()))
 
     plt.title(folder_name)
 

@@ -15,10 +15,10 @@ if __name__ == "__main__":
           
     # parameters
     ## by default
-    maxRadius = 0.2
+    maxRadius = 10
     region = "liege"
     without_interchange = True # choose if consider interchanges or not
-    apply_algo_3 = True # choose between "algo 2" and "algo 2 & 3"
+    apply_algo_3 = False # choose between "algo 2" and "algo 2 & 3"
     
     try:
         if len(sys.argv) > 2:
@@ -34,7 +34,10 @@ if __name__ == "__main__":
     print(f"{maxRadius}, {region}, {without_interchange}, {apply_algo_3}")
 
     number_dec = str(maxRadius-int(maxRadius))[2:]
-    folder_name = f"{region}_0{number_dec}"
+    if number_dec:
+        folder_name = f"{region}_{int(maxRadius)}-{number_dec}"
+    else:
+        folder_name = f"{region}_{int(maxRadius)}"
     if apply_algo_3:
         folder_name += "_algo_3"
     start_date = datetime.datetime(2021, 1, 4, 0 ,0, 0)

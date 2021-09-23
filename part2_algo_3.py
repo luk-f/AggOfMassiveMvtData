@@ -5,8 +5,12 @@ from geopy.distance import distance as geo_distance
 
 import datetime
 
+import sys
 import os
 import settings
+
+import logging
+logging.basicConfig(level=logging.INFO)
 
 from AggOfMassiveMvtData.part2_algo_2 import put_in_proper_group, redistribute_points, algo_2, Group
 
@@ -55,10 +59,26 @@ def algo_3(G, redistribute_point=True):
 
 
 if __name__ == "__main__":
-
+    
+    print(f"Numbers of arg: {len(sys.argv)}")
+          
     # parameters
-    folder_name = "liege_01"
-    maxRadius = 0.1
+    ## by default
+    folder_name = "liege_10"
+    maxRadius = 10
+    
+    try:
+        if len(sys.argv) > 2:
+            maxRadius = float(sys.argv[1])
+            region = sys.argv[2]
+            logging.info(f"{maxRadius}, {region}")
+
+            number_dec = str(maxRadius-int(maxRadius))[2:]
+            folder_name = f"{region}_0{number_dec}"
+    except:
+        logging.error("Arg error")
+            
+
     start_date = datetime.datetime(2021, 1, 4, 0 ,0, 0)
     end_date = datetime.datetime(2021, 1, 15, 0 ,0, 0)
 
