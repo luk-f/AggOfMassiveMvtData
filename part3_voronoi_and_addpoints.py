@@ -1,66 +1,24 @@
 import pandas as pd
 import numpy as np
-from scipy.spatial import Voronoi, voronoi_plot_2d
-from scipy.spatial.qhull import Voronoi as VoronoiObject
-from scipy.spatial.distance import cdist
+from scipy.spatial import voronoi_plot_2d
 
 import sys
 import os
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from tools_lib import tools_lib
+from aggofmassivemvtdata.tools_lib import tools_lib
 
 import matplotlib.pyplot as plt
 
 import os
 import settings
-from utils import random_color, max_radius_km_to_3_max_radius
+from aggofmassivemvtdata.utils import random_color
+from aggofmassivemvtdata.voronoi_map.part3_voronoi import build_voronoi_map_from_centroids
 
 import datetime
 
-def voronoi_map(centroids: np.array, maxRadius: float,
-                lat_min: float, lat_max: float,
-                lon_min: float, lon_max: float) -> VoronoiObject:
-    
-    # add points
-    point_supp = []
-    max_radius_lat, max_radius_long, _ = \
-        max_radius_km_to_3_max_radius(maxRadius, lat_min, lat_max, lon_min, lon_max)
 
-    # maxRadius_2 = maxRadius*2
-    max_radius_lat_2 = max_radius_lat*2
-    max_radius_long_2 = max_radius_long*2
-    hauteur = np.sqrt(max_radius_lat_2**2 - (max_radius_long_2/2)**2)
-
-    paire = True
-    for y in np.arange(lon_min - max_radius_long_2, 
-                    lon_max + max_radius_long_2, hauteur):
-        if paire:
-            x_init = lat_min - max_radius_lat_2
-        else:
-            x_init = lat_min - max_radius_lat_2 + max_radius_lat_2/2
-        for x in np.arange(x_init, 
-                        lat_max + max_radius_lat_2, max_radius_lat_2):
-            point_supp.append((x, y))
-        paire = not paire
-    # point_supp = np.array(point_supp)
-
-    # select valid additional points
-    centroids_tuple = [tuple(x) for x in centroids]
-    df_tuple = []
-    for pt_sup in point_supp:
-        for centroid in centroids_tuple:
-            df_tuple.append((pt_sup, centroid))
-    distance_supp = np.array(tools_lib.bulk_haversine(df_tuple)).\
-        reshape((len(point_supp), len(centroids_tuple)))
-    supp_selected = np.all(distance_supp > maxRadius*2, axis=1)
-    point_supp_selected = np.array(point_supp)[supp_selected]
-
-    new_points = np.concatenate((centroids, point_supp_selected))
-
-    new_vor = Voronoi(new_points, incremental=False)
-    return new_vor
 
 
 if __name__ == "__main__":
@@ -97,9 +55,27 @@ if __name__ == "__main__":
 
     points = df_centroids.to_numpy()
 
-    voronoi = voronoi_map(points, maxRadius, lat_min, lat_max, lon_min, lon_max)
+    voronoi = build_voronoi_map_from_centroids(points, maxRadius, lat_min, lat_max, lon_min, lon_max)
     
-    # exit()
+    # print(voronoi.vertices)
+    # print(voronoi.ridge_vertices)
+    
+    import matplotlib.lines as lines
+    import plotly.graph_objects as go
+    import folium
+    
+    m = folium.Map()
+    
+    # print(df_stops[['LATITUDE', 'LONGITUDE']].to_numpy().T)
+    print(df_stops[['LATITUDE', 'LONGITUDE']].dtypes)
+    for _, centroid_number in df_centroids.iterrows():
+        # print(centroid_number[['LATITUDE', 'LONGITUDE']])
+        folium.CircleMarker(location=(centroid_number['LATITUDE'], 
+                                      centroid_number['LONGITUDE']))
+        
+    m
+    
+    exit()
 
     fig = plt.figure(figsize=(10, 10))
     ax = fig.add_subplot(111)
