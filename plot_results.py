@@ -1,12 +1,10 @@
 import pandas as pd
 import numpy as np
-from pandas.core.arrays.sparse import dtype
 from bisect import bisect_left
 
 from scipy.spatial import  voronoi_plot_2d
 import matplotlib.pyplot as plt
 import datetime
-from geopy import distance
 
 import os
 import settings
@@ -26,7 +24,7 @@ sys.path.append(os.path.dirname(SCRIPT_DIR))
 from tools_lib import tools_lib
 
 """"""
-PLOT_SHOW = True
+PLOT_SHOW = False
 PLOT_STOPS = True
 logging.basicConfig(level=logging.INFO)
 """"""
@@ -104,7 +102,7 @@ if __name__ == "__main__":
     ratio_lat_to_plot = 15 / distance_latitude
     dim_plot_long = distance_longitude * ratio_lat_to_plot
     
-    fig = plt.figure(figsize=(15*2, dim_plot_long))
+    fig = plt.figure(figsize=(dim_plot_long*2, 15))
     
     ax = fig.add_subplot(121)
 
@@ -112,7 +110,7 @@ if __name__ == "__main__":
         for centroid_number in df_stops['CENTROID_NUMBER'].unique():
             # print(group_points)
             df_tmp = df_stops[df_stops['CENTROID_NUMBER'] == centroid_number]
-            ax.scatter(df_tmp['LATITUDE'], df_tmp['LONGITUDE'], 
+            ax.scatter(df_tmp['LONGITUDE'], df_tmp['LATITUDE'], 
                        # cmap=plt.cm.nipy_spectral,
                        color=random_color(as_str=False, alpha=1), marker='.',
                        alpha=0.01)
@@ -178,9 +176,9 @@ if __name__ == "__main__":
                     plt.arrow(
                         # start_lat, start_long, 
                         #       dlat, dlong,
-                              start_lat + gap_lat + pairwise_latlong[0], 
                               start_long + gap_long + pairwise_latlong[1], 
-                              dlat-2*gap_lat, dlong-2*gap_long,
+                              start_lat + gap_lat + pairwise_latlong[0], 
+                              dlong-2*gap_long, dlat-2*gap_lat, 
                               length_includes_head=True, 
                               width=tmp_width_arrow,
                               shape='right',
@@ -190,12 +188,12 @@ if __name__ == "__main__":
                     # break
                 else:
                     # TODO scatter
-                    plt.scatter(start_lat, start_long, 
+                    plt.scatter(start_long, start_lat,
                                 c='red', alpha=0.5,
                                 s=val/ratio_size_scatter)
 
-    plt.xlim((df_stops['LATITUDE'].min(), df_stops['LATITUDE'].max()))
-    plt.ylim((df_stops['LONGITUDE'].min(), df_stops['LONGITUDE'].max()))
+    plt.xlim((df_stops['LONGITUDE'].min(), df_stops['LONGITUDE'].max()))
+    plt.ylim((df_stops['LATITUDE'].min(), df_stops['LATITUDE'].max()))
 
     ax = fig.add_subplot(222)
     ax.title.set_text('Taille des flèches selon nombre de voyageurs')
@@ -226,8 +224,8 @@ if __name__ == "__main__":
     else:    
         logging.info(f"Directory {res_path_name} already exists")
         
-    path_savefig = os.path.join(res_path_name, region+'_'+prefix_input_seg+f'{maxRadius}.pdf')
-    fig.savefig(path_savefig)
+    path_savefig = os.path.join(res_path_name, region+'_'+prefix_input_seg+f'{maxRadius}.png')
+    fig.savefig(path_savefig, format='png')
     logging.info(f'Fig {path_savefig} saved!')
     
     if PLOT_SHOW:
