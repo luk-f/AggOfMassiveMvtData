@@ -7,7 +7,7 @@ import settings
 
 import datetime
 
-from utils import str_to_bool, generate_folder_name
+from aggofmassivemvtdata.utils import str_to_bool, generate_folder_name
 
 if __name__ == "__main__":
     

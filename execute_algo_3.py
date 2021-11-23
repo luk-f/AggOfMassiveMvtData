@@ -6,63 +6,17 @@ import datetime
 
 import sys
 import os
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from tools_lib import tools_lib
+from aggofmassivemvtdata.tools_lib import tools_lib
 
 import logging
 logging.basicConfig(level=logging.INFO)
 
-from AggOfMassiveMvtData.part2_algo_2 import put_in_proper_group, redistribute_points, algo_2, Group
+from aggofmassivemvtdata.clustering.part2_algo_2 import algo_2
+from aggofmassivemvtdata.clustering.part2_algo_3 import algo_3
 
 import matplotlib.pyplot as plt
 import random
-
-def algo_3(G, redistribute_point=True):
-
-    medXY = {}
-    dens = {}
-    centroid_and_points = G.getCentroidsAndPoints()
-    
-    for c, g in centroid_and_points.items():
-        medXY_k = np.median(g, axis=0)
-        medXY[c] = medXY_k
-        medXY_k_g_tuple = [(tuple(medXY_k), tuple(x_g)) for x_g in g]
-        dist_medXY_k_g = np.array(tools_lib.bulk_haversine(medXY_k_g_tuple))
-        mDist_k = np.mean(np.mean(dist_medXY_k_g))
-        
-        dens_k = medXY_k.shape[0] / mDist_k**2
-        dens[c] = dens_k
-
-    mDens = np.mean(list(dens.values()))
-    centroid_sorted_by_density = sorted(dens, key=dens.get)
-    # R_prime = []
-    for centroid_key in centroid_sorted_by_density:
-        if dens[centroid_key] < mDens:
-            break
-        points = centroid_and_points[centroid_key]
-        medXY_centroid_key_points_tuple = [(tuple(medXY_k), tuple(point)) 
-                                           for point in points]
-        dist_medXY_centroid_key_points = \
-            np.array(tools_lib.bulk_haversine(medXY_centroid_key_points_tuple))
-        pMed = points[np.argmin(dist_medXY_centroid_key_points)]
-        g_prime = Group(c=pMed)
-        # R_prime.append(g_prime)
-        i, j = G.get_grid_position(pMed)
-        G.matrice_of_cells[i, j][tuple(pMed)] = g_prime
-    # nettoyer la Grid avant de continuer
-    for row_cells in G.matrice_of_cells:
-        for cell in row_cells:
-            cell.cleanAllGroupOfPoint()
-    for centroid_key in centroid_sorted_by_density:
-        points = centroid_and_points[centroid_key]
-        for p in points:
-            put_in_proper_group(p, G)
-    if redistribute_point:
-        redistribute_points(G)
-        # TODO retourner la liste des groupes plutôt que la grille de cellule ?
-    return G
 
 
 if __name__ == "__main__":
