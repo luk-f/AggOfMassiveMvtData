@@ -14,7 +14,7 @@ import sys
 from utils import str_to_bool, random_color, gap_arrow, width_arrow_wrt_interval, \
     skip_diag_masking, max_radius_km_to_3_max_radius, generate_folder_name
 
-from part3_voronoi_and_addpoints import voronoi_map
+from part3_voronoi_and_addpoints import build_voronoi_map_from_centroids
 
 import sys
 import os
@@ -90,7 +90,7 @@ if __name__ == "__main__":
 
     points = df_centroids.to_numpy()
 
-    voronoi = voronoi_map(points, maxRadius, lat_min, lat_max, lon_min, lon_max)
+    voronoi = build_voronoi_map_from_centroids(points, maxRadius, lat_min, lat_max, lon_min, lon_max)
 
     coords_1 = (lat_max, df_stops['LONGITUDE'].mean())
     coords_2 = (lat_min, df_stops['LONGITUDE'].mean())
