@@ -1,13 +1,7 @@
 import pandas as pd
-import numpy as np
 from scipy.spatial import voronoi_plot_2d
 
-import sys
 import os
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.dirname(SCRIPT_DIR))
-
-from aggofmassivemvtdata.tools_lib import tools_lib
 
 import matplotlib.pyplot as plt
 
@@ -17,8 +11,6 @@ from aggofmassivemvtdata.utils import random_color
 from aggofmassivemvtdata.voronoi_map.part3_voronoi import build_voronoi_map_from_centroids
 
 import datetime
-
-
 
 
 if __name__ == "__main__":
