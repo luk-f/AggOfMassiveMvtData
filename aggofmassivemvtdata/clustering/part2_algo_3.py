@@ -7,7 +7,6 @@ import datetime
 from aggofmassivemvtdata.tools_lib import tools_lib
 
 import logging
-logging.basicConfig(level=logging.INFO)
 
 from aggofmassivemvtdata.clustering.part2_algo_2 import put_in_proper_group, redistribute_points, algo_2, Group
 

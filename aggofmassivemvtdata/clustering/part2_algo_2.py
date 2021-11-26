@@ -1,5 +1,4 @@
 import logging
-logging.basicConfig(level=logging.INFO)
 
 from aggofmassivemvtdata.tools_lib import tools_lib
 from aggofmassivemvtdata.grid_clustering.grid import Grid, Group, CoordCentroid
