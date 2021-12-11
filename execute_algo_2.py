@@ -16,7 +16,7 @@ import sys
 import logging
 logging.basicConfig(level=logging.INFO)
 
-from aggofmassivemvtdata.tools_lib import tools_lib
+import pyhaversine
 from aggofmassivemvtdata.utils import generate_folder_name
 from aggofmassivemvtdata.clustering.part2_algo_2 import algo_2
 
@@ -65,7 +65,7 @@ if __name__ == "__main__":
     for stop in df_stops_tuple:
         for centroid in centroids_tuple:
             df_stops_centroid_tuple.append((stop, centroid))
-    distancesToCentroids = tools_lib.bulk_haversine(df_stops_centroid_tuple)
+    distancesToCentroids = pyhaversine.bulk_haversine(df_stops_centroid_tuple)
     logging.info('Fin du cdist entre STOPS et centroids')
     
     distancesToCentroids = np.array(distancesToCentroids).reshape((len(df_stops_tuple), 
