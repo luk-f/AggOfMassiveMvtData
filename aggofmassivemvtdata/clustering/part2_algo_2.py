@@ -1,6 +1,6 @@
 import logging
 
-from aggofmassivemvtdata.tools_lib import tools_lib
+import pyhaversine
 from aggofmassivemvtdata.grid_clustering.grid import Grid, Group, CoordCentroid
 from aggofmassivemvtdata.utils import generate_folder_name
 
@@ -67,7 +67,7 @@ def get_closer_centroid(p, G, cell_gap: int = 1) -> CoordCentroid:
             for g in G.matrice_of_cells[k_row, k_col].values():
                 # logging.info(f"\t\t\t\t\t {g}")
                 p_tuple = (p[0], p[1])
-                dist_p_and_centroid = tools_lib.haversine(p_tuple, g.centroid)/1000
+                dist_p_and_centroid = pyhaversine.haversine(p_tuple, g.centroid)/1000
                 # logging.info(f"\t\t\t\t\t {dist_p_and_centroid}")
                 if dist_p_and_centroid <= G.max_radius*cell_gap:
                     C.append((dist_p_and_centroid, g))

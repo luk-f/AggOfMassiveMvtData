@@ -2,7 +2,7 @@ import numpy as np
 import math
 from typing import List, Dict, Tuple
 
-from aggofmassivemvtdata.tools_lib import tools_lib
+import pyhaversine
 
 import logging
 
@@ -77,8 +77,8 @@ class Grid:
         coords_north = ((self.x_max + self.x_min)/2, self.y_max)
         coords_south = ((self.x_max + self.x_min)/2, self.y_min)
         logging.debug(f"grid coord extreme : {coords_east}, {coords_west}, {coords_north}, {coords_south}")
-        self.dist_latitude = tools_lib.haversine(coords_west, coords_east)/1000
-        self.dist_longitude = tools_lib.haversine(coords_north, coords_south)/1000
+        self.dist_latitude = pyhaversine.haversine(coords_west, coords_east)/1000
+        self.dist_longitude = pyhaversine.haversine(coords_north, coords_south)/1000
         self.max_radius = max_radius
         # self.matrice_of_cells = np.empty((self.n_rows, self.n_columns), dtype=object)
         # self.matrice_of_cells[:] = vCell()
@@ -123,8 +123,8 @@ class Grid:
         Retrouve les coordonnées de l'objet `p` sur la matrice_of_cells
         """
         p_tuple = (p[0], p[1])
-        i = math.floor(tools_lib.haversine(p_tuple, (self.x_min, p[1])) / (1000*self.max_radius))
-        j = math.floor(tools_lib.haversine(p_tuple, (p[0], self.y_min)) / (1000*self.max_radius))
+        i = math.floor(pyhaversine.haversine(p_tuple, (self.x_min, p[1])) / (1000*self.max_radius))
+        j = math.floor(pyhaversine.haversine(p_tuple, (p[0], self.y_min)) / (1000*self.max_radius))
         return i, j
 
     def getAllPoints(self) -> np.array:
