@@ -7,6 +7,11 @@ def data_from_url(url: str, downloads_dir: str):
 
     # Combine the name and the downloads directory to get the local filename
     filename = os.path.join(downloads_dir, name)
+    
+    # if folder don't exist
+    if not os.path.isdir(downloads_dir):
+        os.makedirs(downloads_dir)
+        print("created folder : ", downloads_dir)
 
     # Download the file if it does not exist
     if not os.path.isfile(filename):
