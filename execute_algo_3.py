@@ -67,7 +67,7 @@ if __name__ == "__main__":
     for stop in df_stops_tuple:
         for centroid in centroids_tuple:
             df_stops_centroid_tuple.append((stop, centroid))
-    distancesToCentroids = pyhaversine.bulk_haversine(df_stops_centroid_tuple)
+    distancesToCentroids = tools_lib.bulk_haversine(df_stops_centroid_tuple)
     logging.info('Fin du cdist entre STOPS et centroids')
     
     distancesToCentroids = np.array(distancesToCentroids).reshape((len(df_stops_tuple), 

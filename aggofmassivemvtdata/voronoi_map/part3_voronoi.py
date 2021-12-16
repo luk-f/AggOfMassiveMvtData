@@ -38,7 +38,7 @@ def build_voronoi_map_from_centroids(centroids: np.array, maxRadius: float,
     for pt_sup in point_supp:
         for centroid in centroids_tuple:
             df_tuple.append((pt_sup, centroid))
-    distance_supp = np.array(pyhaversine.bulk_haversine(df_tuple)).\
+    distance_supp = np.array(tools_lib.bulk_haversine(df_tuple)).\
         reshape((len(point_supp), len(centroids_tuple)))
     supp_selected = np.all(distance_supp > maxRadius*2, axis=1)
     point_supp_selected = np.array(point_supp)[supp_selected]

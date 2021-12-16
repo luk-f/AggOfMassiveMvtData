@@ -23,7 +23,7 @@ def algo_3(G, redistribute_point=True):
         medXY_k = np.median(g, axis=0)
         medXY[c] = medXY_k
         medXY_k_g_tuple = [(tuple(medXY_k), tuple(x_g)) for x_g in g]
-        dist_medXY_k_g = np.array(pyhaversine.bulk_haversine(medXY_k_g_tuple))
+        dist_medXY_k_g = np.array(tools_lib.bulk_haversine(medXY_k_g_tuple))
         mDist_k = np.mean(np.mean(dist_medXY_k_g))
         
         dens_k = medXY_k.shape[0] / mDist_k**2
@@ -39,7 +39,7 @@ def algo_3(G, redistribute_point=True):
         medXY_centroid_key_points_tuple = [(tuple(medXY_k), tuple(point)) 
                                            for point in points]
         dist_medXY_centroid_key_points = \
-            np.array(pyhaversine.bulk_haversine(medXY_centroid_key_points_tuple))
+            np.array(tools_lib.bulk_haversine(medXY_centroid_key_points_tuple))
         pMed = points[np.argmin(dist_medXY_centroid_key_points)]
         g_prime = Group(c=pMed)
         # R_prime.append(g_prime)
@@ -107,7 +107,7 @@ if __name__ == "__main__":
     for stop in df_stops_tuple:
         for centroid in centroids_tuple:
             df_stops_centroid_tuple.append((stop, centroid))
-    distancesToCentroids = pyhaversine.bulk_haversine(df_stops_centroid_tuple)
+    distancesToCentroids = tools_lib.bulk_haversine(df_stops_centroid_tuple)
     logging.info('Fin du cdist entre STOPS et centroids')
     
     distancesToCentroids = np.array(distancesToCentroids).reshape((len(df_stops_tuple), 
