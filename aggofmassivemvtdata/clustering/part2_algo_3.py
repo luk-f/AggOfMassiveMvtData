@@ -7,13 +7,27 @@ import datetime
 import pyhaversine
 
 import logging
+import os
 
 from aggofmassivemvtdata.clustering.part2_algo_2 import put_in_proper_group, redistribute_points, algo_2, Group
+from aggofmassivemvtdata.grid_clustering.grid import Grid
 
 import matplotlib.pyplot as plt
 import random
 
-def algo_3(G, redistribute_point=True):
+def algo_3(G: Grid, redistribute_point: bool=True) -> Grid:
+    """
+    Clustering algorithm 3 from
+    Spatial Generalization and Aggregation of Massive Movement Data, 
+    Adrienko & Adrienko, IEEE TVCG, 2011
+
+    :param G: The grid computed in `aggofmassivemvtdata.clustering.part2_algo_2.algo_2`
+    :type G: Grid
+    :param redistribute_point: to attribute a centroid to each point, defaults to True
+    :type redistribute_point: bool, optional
+    :return: the grid containing the centroids
+    :rtype: Grid
+    """
 
     medXY = {}
     dens = {}
