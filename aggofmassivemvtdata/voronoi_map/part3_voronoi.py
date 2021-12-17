@@ -8,6 +8,23 @@ from aggofmassivemvtdata.utils import max_radius_km_to_3_max_radius
 def build_voronoi_map_from_centroids(centroids: np.array, maxRadius: float,
                 lat_min: float, lat_max: float,
                 lon_min: float, lon_max: float) -> VoronoiObject:
+    """[summary]
+
+    :param centroids: [description]
+    :type centroids: np.array
+    :param maxRadius: in km
+    :type maxRadius: float
+    :param lat_min: [description]
+    :type lat_min: float
+    :param lat_max: [description]
+    :type lat_max: float
+    :param lon_min: [description]
+    :type lon_min: float
+    :param lon_max: [description]
+    :type lon_max: float
+    :return: [description]
+    :rtype: VoronoiObject
+    """
     
     # add points
     point_supp = []
@@ -40,7 +57,7 @@ def build_voronoi_map_from_centroids(centroids: np.array, maxRadius: float,
             df_tuple.append((pt_sup, centroid))
     distance_supp = np.array(pyhaversine.bulk_haversine(df_tuple)).\
         reshape((len(point_supp), len(centroids_tuple)))
-    supp_selected = np.all(distance_supp > maxRadius*2, axis=1)
+    supp_selected = np.all(distance_supp > maxRadius*2*1000, axis=1)
     point_supp_selected = np.array(point_supp)[supp_selected]
 
     new_points = np.concatenate((centroids, point_supp_selected))
