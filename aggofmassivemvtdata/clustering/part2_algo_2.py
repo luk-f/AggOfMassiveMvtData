@@ -2,17 +2,30 @@ import logging
 
 import pyhaversine
 from aggofmassivemvtdata.grid_clustering.grid import Grid, Group, CoordCentroid
-from aggofmassivemvtdata.utils import generate_folder_name
 
+import numpy as np
+import pandas as pd
 
 """
 Définition des fonctions
 """
 
-def algo_2(P, max_radius, redistribute_point=True):
+def algo_2(P: np.ndarray, max_radius: float, redistribute_point: bool=True) -> Grid:
     """
-    Algo de clustering
+    Clustering algorithm 2 from
+    Spatial Generalization and Aggregation of Massive Movement Data, 
+    Adrienko & Adrienko, IEEE TVCG, 2011
+
+    :param P: Geographical coordinates, should be in order `LATITUDE`, `LONGITUDE`
+    :type P: np.ndarray
+    :param max_radius: the max radius
+    :type max_radius: float
+    :param redistribute_point: to attribute a centroid to each point, not necessary if you want apply algo 3 after this one, defaults to True
+    :type redistribute_point: bool, optional
+    :return: the grid containing the centroids
+    :rtype: Grid
     """
+
     # cherche les limites de la grille
     x_min, x_max = min(P[:,0]), max(P[:,0])
     y_min, y_max = min(P[:,1]), max(P[:,1])
@@ -111,6 +124,34 @@ def redistribute_points(G: Grid):
         except:
             print(f"Error {point}")
 
+def assign_centroid_to_each_point(df_points: pd.DataFrame, centroids: np.array) -> pd.DataFrame:
+    """Assign the nearest centroid number for each point
 
+    :param df_points: Should contains columns `LATITUDE` and `LONGITUDE`
+    :type df_points: pd.DataFrame
+    :param centroids: Geographical coordinates of the centroids
+    :type centroids: np.array
+    :return: Points with centroid numbers
+    :rtype: pd.DataFrame
+    """
+
+    points_tuple = [tuple(x) for x in df_points[['LATITUDE', 'LONGITUDE']].to_numpy()]
+    centroids_tuple = [tuple(x) for x in centroids]
+    points_centroid_tuple = []
+    for stop in points_tuple:
+        for centroid in centroids_tuple:
+            points_centroid_tuple.append((stop, centroid))
+    distancesToCentroids = pyhaversine.bulk_haversine(points_centroid_tuple)
+    logging.info('Fin du cdist entre STOPS et centroids')
+    
+    distancesToCentroids = np.array(distancesToCentroids).reshape((len(points_tuple), 
+                                                                   len(centroids_tuple)))
+
+    df_place_with_results = df_points.copy()
+
+    df_place_with_results['CENTROID_NUMBER'] = pd.Series(np.argmin(distancesToCentroids, axis=1), 
+        index=df_points.index)
+    
+    return df_place_with_results
 
 
