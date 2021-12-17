@@ -1,5 +1,5 @@
 # Spatial Generalization and Aggregation of Massive Movement Data
-by Andrienko & Andrienko, 2011
+by Adrienko & Adrienko, IEEE TVCG, 2011
 
 ## Installation
 
