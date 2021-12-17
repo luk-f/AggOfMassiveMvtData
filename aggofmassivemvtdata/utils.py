@@ -83,6 +83,21 @@ def skip_diag_masking(A):
 def max_radius_km_to_3_max_radius(maxRadius: float,
                                   lat_min: float, lat_max: float,
                                   lon_min: float, lon_max: float):
+    """[summary]
+
+    :param maxRadius: in km
+    :type maxRadius: float
+    :param lat_min: [description]
+    :type lat_min: float
+    :param lat_max: [description]
+    :type lat_max: float
+    :param lon_min: [description]
+    :type lon_min: float
+    :param lon_max: [description]
+    :type lon_max: float
+    :return: [description]
+    :rtype: [type]
+    """
     middle_point = ((lat_min + lat_max)/2, (lon_min + lon_max)/2)
     middle_point_lat = inverse_haversine(middle_point, maxRadius, Direction.WEST)
     middle_point_long = inverse_haversine(middle_point, maxRadius, Direction.NORTH)
@@ -98,3 +113,4 @@ def generate_folder_name(region: str, maxRadius: str, apply_algo_3: bool = False
     if apply_algo_3:
         return folder_name + "_algo_3"
     return folder_name
+
