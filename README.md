@@ -7,8 +7,4 @@ by Adrienko & Adrienko, IEEE TVCG, 2011
 
 ## Run
 
-By step:
- * Compute clusters with `algo_2` (and if you want `algo_3`) from `part_2`
-     * return a grid
- * Compute segments with `part4_and_5_divide_and_agg.py`
- * To plot result, execute `plot_results.py`
+You can read the [`example.ipynb` notebook](examples/notebooks/example.ipynb) to follow each step
