@@ -3,8 +3,8 @@ by Adrienko & Adrienko, IEEE TVCG, 2011
 
 ## Installation
 
- - Execute `pip install -r requirements.txt`
+Execute `pip install -r requirements.txt`.
 
 ## Run
 
-You can read the [`example.ipynb` notebook](examples/notebooks/example.ipynb) to follow each step
+You can read the [`example.ipynb` notebook](examples/notebooks/example.ipynb) to follow each step, and see Folium maps results on the [`example.html` html file](examples/notebooks/example.html).
